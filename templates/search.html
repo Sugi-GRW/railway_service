@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Search Bar Full Width Background -->
+<div class="bg-black w-full relative h-48 flex items-center justify-center">
+    <div class="absolute inset-0 dot-pattern-gradient"></div>
+    <div class="w-full max-w-5xl mx-auto px-8 relative z-10">
+        <!-- Search Bar Section -->
+        <form id="searchForm" method="GET" action="/" class="search-bar">
+            <!-- From -->
+            <div class="search-input-wrapper" style="flex: 2;">
+                <div class="icon-box" style="width: 28px; height: 28px; margin-right: 8px;">
+                    <span class="material-symbols-outlined text-[16px]">north_east</span>
+                </div>
+                <input name="from" placeholder="Откуда" type="text" value="{{ from_query }}" />
+            </div>
+            <div class="swap-btn-container">
+                <button class="swap-btn-mini" title="Поменять местами" type="button"
+                    onclick="const f=document.querySelector('input[name=from]'); const t=document.querySelector('input[name=to]'); const v=f.value; f.value=t.value; t.value=v;">
+                    <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16">
+                        <path d="M8 7h12m0 0l-4-4m4 4l-4 4m4 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round"
+                            stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="divider"></div>
+            <!-- To -->
+            <div class="search-input-wrapper" style="padding-left: 20px; flex: 2;">
+                <div class="icon-box" style="width: 28px; height: 28px; margin-right: 8px;">
+                    <span class="material-symbols-outlined text-[16px]">south_east</span>
+                </div>
+                <input name="to" placeholder="Куда" type="text" value="{{ to_query }}" />
+            </div>
+            <div class="divider"></div>
+            <!-- Date -->
+            <div class="search-input-wrapper" style="flex: 1;">
+                <div class="icon-box" style="width: 28px; height: 28px; margin-right: 8px;">
+                    <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                </div>
+                <input id="datePicker" name="date" placeholder="Дата" type="text" value="{{ date_query }}"
+                    style="background:transparent; border:none; outline:none; font-family:inherit; font-weight:700; width:100%; cursor:pointer;" />
+            </div>
+            <input type="hidden" name="sort" id="sortInput" value="{{ sort_param }}">
+            <button class="btn-submit-search" type="submit">Найти</button>
+        </form>
+    </div>
+</div>
+
+<!-- Main Content -->
+<main class="flex-grow flex flex-col w-full max-w-7xl mx-auto px-8 py-8 gap-8">
+    <div class="flex flex-col gap-8 flex-grow">
+        {% if messages %}
+        <div class="flex flex-col gap-4">
+            {% for message in messages %}
+            <div class="p-4 rounded-xl text-sm font-semibold flex items-center gap-2 {% if message.tags == 'error' %}bg-error-container text-on-error-container{% else %}bg-primary-container/30 text-primary{% endif %} shadow-sm border {% if message.tags == 'error' %}border-error-container{% else %}border-primary-container{% endif %}">
+                <span class="material-symbols-outlined">{% if message.tags == 'error' %}error{% else %}check_circle{% endif %}</span>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Results Column -->
+        <div class="flex-1 flex flex-col gap-6">
+            <!-- Sorting -->
+            <div class="flex items-center justify-between border-b border-surface-variant pb-4">
+                <span class="text-on-surface text-[24px] font-semibold">{% if results %}{{ results|length }}{% else %}0{% endif %} результатов</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-on-surface-variant text-[14px]">Сортировать по:</span>
+                    <div class="flex bg-surface-container rounded-lg p-1">
+                        <button type="button"
+                            onclick="document.getElementById('sortInput').value='price'; document.getElementById('searchForm').submit();"
+                            class="px-4 py-1.5 {% if sort_param == 'price' %}bg-surface-container-lowest text-on-surface shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %} rounded text-[12px] font-bold tracking-wide transition-colors">Цене</button>
+                        <button type="button"
+                            onclick="document.getElementById('sortInput').value='time'; document.getElementById('searchForm').submit();"
+                            class="px-4 py-1.5 {% if sort_param == 'time' %}bg-surface-container-lowest text-on-surface shadow-sm{% else %}text-on-surface-variant hover:text-on-surface{% endif %} rounded text-[12px] font-bold tracking-wide transition-colors">Времени</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Result Cards -->
+            <div class="flex flex-col gap-4">
+                {% for res in results %}
+                <!-- Card -->
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-surface-variant hover:shadow-[0px_8px_30px_rgba(0,0,0,0.1)] transition-shadow border-l-4 border-l-primary-container {% if res.is_past %}opacity-60 grayscale-[0.5] cursor-default{% else %}cursor-pointer{% endif %}"
+                    {% if not res.is_past %}onclick="window.location.href='/seats/{{ res.trip_id }}/?from_station={{ res.start_station_id }}&to_station={{ res.end_station_id }}'"{% endif %}>
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-bold text-primary bg-primary-container/20 px-2 py-1 rounded">{{ res.train_num }}</span>
+                            {% if res.is_fastest %}
+                            <div class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide flex items-center gap-1 uppercase">
+                                <span class="material-symbols-outlined text-[14px]">bolt</span>Самый быстрый
+                            </div>
+                            {% endif %}
+                            {% if res.is_cheapest %}
+                            <div class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide flex items-center gap-1 uppercase">
+                                <span class="material-symbols-outlined text-[14px]">sell</span>Самый дешевый
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex flex-col">
+                            {% if res.is_multi_day %}
+                            <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wide mb-1">{{ res.depart_time|date:"j E"|lower }}, {{ res.depart_time|date:"D"|lower }}</span>
+                            {% endif %}
+                            <span class="text-[24px] font-semibold text-on-surface leading-none mb-1">{{ res.depart_time|date:"H:i" }}</span>
+                            <span class="text-[14px] text-on-surface-variant">{{ res.start_station }}</span>
+                        </div>
+
+                        <div class="flex-1 flex flex-col items-center justify-end h-full">
+                            <span class="text-[11px] font-semibold tracking-wide text-on-surface-variant mb-1 uppercase">{{ res.duration_str }}</span>
+                            <div class="w-full flex items-center">
+                                <div class="w-2 h-2 rounded-full border-2 border-outline-variant bg-surface-container-lowest">
+                                </div>
+                                <div class="flex-1 h-px bg-outline-variant"></div>
+                                <div class="w-2 h-2 rounded-full border-2 border-outline-variant bg-surface-container-lowest">
+                                </div>
+                            </div>
+                            <span class="text-[11px] font-semibold tracking-wide text-outline mt-1 uppercase">ПРЯМОЙ</span>
+                        </div>
+
+                        <div class="flex flex-col text-right">
+                            {% if res.is_multi_day %}
+                            <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wide mb-1">{{ res.arrive_time|date:"j E"|lower }}, {{ res.arrive_time|date:"D"|lower }}</span>
+                            {% endif %}
+                            <span class="text-[24px] font-semibold text-on-surface leading-none mb-1">{{ res.arrive_time|date:"H:i" }}</span>
+                            <span class="text-[14px] text-on-surface-variant">{{ res.end_station }}</span>
+                        </div>
+
+                        {% if not res.is_past %}
+                        <div class="pl-6 border-l border-surface-variant flex flex-col items-end gap-2 ml-4">
+                            <span class="text-[14px] font-bold tracking-wide text-on-surface">от {{ res.min_price }} руб</span>
+                            <button class="bg-primary-container text-on-primary-fixed px-6 py-2 rounded-lg text-[12px] font-bold uppercase tracking-wide hover:bg-primary-fixed transition-colors">Купить</button>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-on-surface-variant py-10 text-[18px]">
+                    Рейсы не найдены. Попробуйте изменить параметры поиска.
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        flatpickr("#datePicker", {
+            locale: {
+                ...flatpickr.l10ns.ru,
+                months: {
+                    ...flatpickr.l10ns.ru.months,
+                    longhand: [
+                        "Января", "Февраля", "Марта", "Апреля", "Мая", "Июня",
+                        "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"
+                    ],
+                    shorthand: [
+                        "Янв", "Фев", "Мар", "Апр", "Мая", "Июн",
+                        "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
+                    ]
+                }
+            },
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "j F, D",
+            minDate: "today"
+        });
+    });
+</script>
+{% endblock %}

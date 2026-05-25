@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ action_title }} билета</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#f4f4f8;font-family:'Inter',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#18181b;padding:28px 32px;text-align:left;">
+              <p
+                style="margin:0;color:#D1FF00;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">
+                ЖЕЛЕЗНОДОРОЖНЫЙ СЕРВИС</p>
+              <h1 style="margin:8px 0 0 0;color:#ffffff;font-size:22px;font-weight:800;">{{ action_title }} билета</h1>
+            </td>
+          </tr>
+
+          <!-- Ticket Info -->
+          <tr>
+            <td style="padding:28px 32px;">
+              <table cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;width:240px;">Поезд:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ train_num }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Вагон:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ wagon_num }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Место:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ seat_num }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Класс:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ wagon_class }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Расположение:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ seat_location|title }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Тип места:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ seat_type }}</td>
+                </tr>
+                {% if duration %}
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Продолжительность поездки:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ duration }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Дата и время отправления:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">
+                    {{ dep_date }} в {{ dep_time }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Станция отправления:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ from_station }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Дата и время прибытия:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">
+                    {{ arr_date }} в {{ arr_time }}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#71717a;font-size:13px;">Станция прибытия:</td>
+                  <td style="padding:6px 0;color:#18181b;font-size:13px;font-weight:600;">{{ to_station }}</td>
+                </tr>
+              </table>
+              
+              {% if services_title and services_list %}
+              <hr style="border:none;border-top:1px solid #e4e4e7;margin:24px 0;">
+              <h3 style="margin:0 0 12px 0;font-size:16px;color:#18181b;">{{ services_title }}</h3>
+              <ul style="margin:0;padding:0 0 0 20px;color:#18181b;font-size:13px;font-weight:600;line-height:1.6;">
+                {% for service_name in services_list %}
+                <li style="margin-bottom:4px;">{{ service_name }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+
+              {% if profile_url %}
+              <div style="margin-top:24px;text-align:center;">
+                <a href="{{ profile_url }}"
+                  style="display:inline-block;background:#D1FF00;color:#18181b;font-size:13px;font-weight:800;padding:12px 28px;border-radius:10px;letter-spacing:0.04em;text-decoration:none;">
+                  Перейти в личный кабинет
+                </a>
+              </div>
+              {% endif %}
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 32px;">
+              <hr style="border:none;border-top:1px dashed #e4e4e7;margin:0;">
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 32px;text-align:center;">
+              <p style="margin:0;color:#a1a1aa;font-size:11px;">Это автоматическое письмо, пожалуйста, не отвечайте на
+                него.</p>
+              <p style="margin:8px 0 0 0;color:#71717a;font-size:10px;">© RAILJET</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

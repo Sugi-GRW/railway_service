@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Успешная оплата{% endblock %}
+
+{% block content %}
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center w-full px-4 md:px-6 py-16 gap-6 relative overflow-hidden bg-[#f8f9fb]">
+    
+    <!-- Decorative background elements -->
+    <div class="absolute inset-0 dot-pattern opacity-30 pointer-events-none"></div>
+    <div class="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#D1FF00]/10 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#D1FF00]/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <!-- Success Card -->
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-highest shadow-xl p-10 max-w-lg w-full text-center relative z-10 flex flex-col items-center">
+        
+        <!-- Animated Checkmark Icon -->
+        <div class="w-24 h-24 bg-[#D1FF00]/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
+            <div class="w-16 h-16 bg-[#D1FF00] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(209,255,0,0.4)]">
+                <span class="material-symbols-outlined text-4xl text-on-primary-fixed font-bold">check</span>
+            </div>
+        </div>
+
+        <h1 class="text-3xl font-black tracking-tight text-on-surface mb-4 uppercase">Оплата прошла успешно!</h1>
+        
+        <div class="w-16 h-1 bg-[#D1FF00] rounded-full mb-6"></div>
+
+        <p class="text-on-surface-variant text-[15px] leading-relaxed mb-8">
+            Ваш билет был успешно оформлен и сохранен в нашей системе. Маршрутная квитанция и данные о поездке уже доступны вам.
+        </p>
+
+        <div class="bg-primary-container/30 border border-primary-container rounded-xl p-5 mb-8 w-full text-left flex gap-4 items-start">
+            <span class="material-symbols-outlined text-primary text-2xl">info</span>
+            <div>
+                <h3 class="text-[13px] font-bold text-primary uppercase tracking-wider mb-1">Как посмотреть билет?</h3>
+                <p class="text-[13px] text-on-surface-variant">
+                    Чтобы посмотреть, скачать или распечатать ваш электронный билет, пожалуйста, перейдите в <strong>Личный кабинет</strong>.
+                </p>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 w-full">
+            <a href="{% url 'profile' %}" class="flex-1 bg-[#D1FF00] text-on-primary-fixed text-[13px] font-bold uppercase tracking-wide px-6 py-3.5 rounded-xl hover:bg-[#bce600] transition-colors shadow-md flex justify-center items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">person</span>
+                Личный кабинет
+            </a>
+            <a href="{% url 'search' %}" class="flex-1 bg-surface-container text-on-surface text-[13px] font-bold uppercase tracking-wide px-6 py-3.5 rounded-xl hover:bg-surface-container-highest transition-colors flex justify-center items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">search</span>
+                На главную
+            </a>
+        </div>
+    </div>
+</main>
+{% endblock %}

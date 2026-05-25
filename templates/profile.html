@@ -1,0 +1,1492 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .tab-btn.active {
+        background-color: #D1FF00;
+        color: #171e00;
+        font-weight: bold;
+    }
+
+    /* Custom Scrollbar for inner elements */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #e1e2e4;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #c0c7d6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-background min-h-[calc(100vh-140px)] flex flex-col pt-8 pb-16">
+    <div class="max-w-7xl mx-auto w-full px-4 md:px-8 flex flex-col md:flex-row gap-8">
+
+        <!-- Sidebar Menu -->
+        <div class="w-full md:w-64 shrink-0">
+            <div
+                class="bg-surface-container-lowest rounded-2xl border border-surface-variant p-4 shadow-sm sticky top-24">
+                <div class="flex flex-col items-center mb-6 pt-4 border-b border-surface-variant pb-6">
+                    <div
+                        class="w-20 h-20 bg-primary-container text-primary flex items-center justify-center rounded-full text-3xl font-bold mb-3 shadow-inner">
+                        {{ user.fio|default:user.login|make_list|first|upper }}
+                    </div>
+                    <h2 class="text-lg font-bold text-on-surface text-center">{{ user.fio|default:user.login }}</h2>
+                    <p class="text-xs text-on-surface-variant">{{ user.email|default:"Нет email" }}</p>
+                </div>
+
+                <nav class="flex flex-col gap-2">
+                    <button onclick="switchTab('profile')" id="btn-profile"
+                        class="tab-btn active text-left px-4 py-3 rounded-xl text-on-surface hover:bg-surface-container transition-colors flex items-center gap-3 text-sm">
+                        <span class="material-symbols-outlined text-xl">person</span> Личные данные
+                    </button>
+                    <button onclick="switchTab('docs')" id="btn-docs"
+                        class="tab-btn text-left px-4 py-3 rounded-xl text-on-surface hover:bg-surface-container transition-colors flex items-center gap-3 text-sm">
+                        <span class="material-symbols-outlined text-xl">badge</span> Мои документы
+                    </button>
+                    <button onclick="switchTab('tickets')" id="btn-tickets"
+                        class="tab-btn text-left px-4 py-3 rounded-xl text-on-surface hover:bg-surface-container transition-colors flex items-center gap-3 text-sm">
+                        <span class="material-symbols-outlined text-xl">confirmation_number</span> Мои билеты
+                    </button>
+                    <button onclick="switchTab('notifications')" id="btn-notifications"
+                        class="tab-btn text-left px-4 py-3 rounded-xl text-on-surface hover:bg-surface-container transition-colors flex items-center gap-3 text-sm justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-xl">notifications</span> Уведомления
+                        </div>
+                    </button>
+                    <button onclick="document.getElementById('delete-account-modal').classList.remove('hidden')"
+                        class="text-left px-4 py-3 rounded-xl text-error hover:bg-error/10 transition-colors flex items-center gap-3 text-sm mt-2">
+                        <span class="material-symbols-outlined text-xl">delete_forever</span> Удалить аккаунт
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-grow">
+            {% if messages %}
+            {% for message in messages %}
+            <div
+                class="p-4 mb-6 rounded-xl text-sm font-semibold flex items-center gap-2 {% if message.tags == 'error' %}bg-error-container text-on-error-container{% else %}bg-primary-container/30 text-primary{% endif %}">
+                <span class="material-symbols-outlined">{% if message.tags == 'error' %}error{% else %}check_circle{% endif %}</span>
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Tab: Personal Data -->
+            <div id="tab-profile" class="tab-content active">
+                <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl font-bold text-on-surface">Личные данные</h2>
+                    </div>
+
+                    <form action="{% url 'profile_update_user' %}" method="POST" class="flex flex-col gap-6">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex flex-col gap-1.5">
+                                <label
+                                    class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">ФИО</label>
+                                <input type="text" name="fio" value="{{ user.fio|default:'' }}"
+                                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                                    required pattern="^[А-Яа-яЁёA-Za-z]+\s+[А-Яа-яЁёA-Za-z]+(\s+[А-Яа-яЁёA-Za-z]+)*$" title="Введите хотя бы Имя и Фамилию через пробел">
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label
+                                    class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Дата
+                                    рождения</label>
+                                <input type="text" id="birth_date" name="birth_date"
+                                    value="{{ user.birth_date|date:'d.m.Y'|default:'' }}"
+                                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                                    placeholder="ДД.ММ.ГГГГ">
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label
+                                    class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Пол</label>
+                                <select name="gender"
+                                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow appearance-none">
+                                    <option value="" {% if not user.gender %}selected{% endif %}>Не указан</option>
+                                    <option value="Мужской" {% if user.gender == 'Мужской' %}selected{% endif %}>Мужской</option>
+                                    <option value="Женский" {% if user.gender == 'Женский' %}selected{% endif %}>Женский</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label
+                                    class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Телефон</label>
+                                <input type="tel" name="phone" id="phone_input" value="{{ user.phone|default:'' }}"
+                                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                                    placeholder="+7 (9__) ___-__-__" pattern="^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$">
+                            </div>
+
+                            <div class="flex flex-col gap-1.5 md:col-span-2">
+                                <label
+                                    class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">E-mail</label>
+                                <input type="email" name="email" value="{{ user.email|default:'' }}"
+                                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t border-surface-variant">
+                            <button type="submit"
+                                class="bg-[#D1FF00] text-on-primary-fixed px-8 py-3 rounded-xl font-bold uppercase tracking-wide hover:bg-[#bce600] transition-colors shadow-sm text-[13px]">
+                                Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab: My Documents -->
+            <div id="tab-docs" class="tab-content">
+                <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl font-bold text-on-surface">Мои документы</h2>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="document.getElementById('add-doc-modal').classList.remove('hidden')" class="text-zinc-300 hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-container" title="Добавить документ">
+                                <span class="material-symbols-outlined text-[24px]">add_circle</span>
+                            </button>
+                            {% if docs %}
+                            <button type="button" id="toggle-edit-doc-mode" class="text-zinc-300 hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-container" title="Управление изменением документов">
+                                <span class="material-symbols-outlined text-[24px]">edit</span>
+                            </button>
+                            <button type="button" id="toggle-delete-doc-mode" class="text-zinc-300 hover:text-error transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-container" title="Управление удалением документов">
+                                <span class="material-symbols-outlined text-[24px]">delete</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if docs %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for doc in docs %}
+                        <div
+                            class="border border-surface-variant rounded-xl p-5 hover:border-[#D1FF00] transition-colors group relative">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary">id_card</span>
+                                    <span class="font-bold text-on-surface">{{ doc.doc_type }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" class="doc-edit-action hidden text-zinc-400 hover:text-primary transition-colors" title="Изменить" 
+                                        data-id="{{ doc.id }}" 
+                                        data-type="{{ doc.doc_type }}" 
+                                        data-num="{{ doc.doc_num }}" 
+                                        data-date="{% if doc.issue_date %}{{ doc.issue_date|date:'d.m.Y' }}{% endif %}"
+                                        onclick="openEditDocModal(this.getAttribute('data-id'), this.getAttribute('data-type'), this.getAttribute('data-num'), this.getAttribute('data-date'))">
+                                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                                    </button>
+                                    <button type="button" class="doc-delete-action hidden text-zinc-400 hover:text-error transition-colors" title="Удалить" onclick="openDeleteDocModal('{{ doc.id }}')">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-lg font-mono tracking-widest text-on-surface mb-2">{{ doc.doc_num }}</div>
+                            {% if doc.issue_date %}
+                            <div class="text-xs text-on-surface-variant">Выдан: {{ doc.issue_date|date:'d.m.Y' }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div
+                        class="text-center py-12 bg-surface-container-lowest border border-dashed border-surface-variant rounded-xl flex flex-col items-center">
+                        <span class="material-symbols-outlined text-4xl text-zinc-300 mb-3">folder_open</span>
+                        <p class="text-on-surface-variant text-sm">У вас пока нет сохраненных документов.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tab: My Tickets -->
+            <div id="tab-tickets" class="tab-content">
+                <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl font-bold text-on-surface">Мои билеты</h2>
+                        {% if tickets %}
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="toggle-services-mode" class="text-zinc-300 hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-container" title="Показать дополнительные услуги">
+                                <span class="material-symbols-outlined text-[24px]">room_service</span>
+                            </button>
+                            <button type="button" id="toggle-qr-mode" class="text-zinc-300 hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-container" title="Показать QR-коды билетов">
+                                <span class="material-symbols-outlined text-[24px]">qr_code_scanner</span>
+                            </button>
+                            <button type="button" id="toggle-cancel-mode" class="text-zinc-300 hover:text-error transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-container" title="Управление возвратом билетов">
+                                <span class="material-symbols-outlined text-[24px]">delete</span>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if tickets %}
+                    <div class="flex flex-col gap-6">
+                        {% for ticket in tickets %}
+                        <div
+                            class="border border-surface-variant rounded-xl overflow-hidden shadow-sm flex flex-col md:flex-row">
+                            <!-- Status Strip -->
+                            <div
+                                class="w-full md:w-2 {% if ticket.status_of_ticket == 'Отменен' %}bg-error{% elif ticket.status_of_ticket == 'Подтвержден' %}bg-[#D1FF00]{% else %}bg-zinc-300{% endif %} h-2 md:h-auto">
+                            </div>
+
+                            <div class="p-6 flex-grow flex flex-col md:flex-row gap-6 md:gap-0 justify-between">
+                                <!-- Trip Info -->
+                                <div class="flex flex-col gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xs font-bold text-primary bg-primary-container/20 px-2 py-1 rounded">{{ ticket.trip.train_num }}</span>
+                                        <span class="text-xs text-on-surface-variant font-semibold uppercase">{{ ticket.trip.departure_time|date:"j E Y" }}</span>
+
+                                        {% if ticket.status_of_ticket == 'Отменен' %}
+                                        <span class="text-[10px] font-bold text-error uppercase border border-error px-2 py-0.5 rounded">Отменен</span>
+                                        {% elif ticket.status_of_ticket == 'Подтвержден' %}
+                                        <span class="text-[10px] font-bold text-primary uppercase border border-primary px-2 py-0.5 rounded">Оплачен</span>
+                                        {% else %}
+                                        <span class="text-[10px] font-bold text-zinc-500 uppercase border border-zinc-400 px-2 py-0.5 rounded">{{ ticket.status_of_ticket }}</span>
+                                        {% endif %}
+
+                                        {% if ticket.auto_upgrade %}
+                                        <span class="text-[10px] font-bold text-blue-500 uppercase border border-blue-500 px-2 py-0.5 rounded">Автоапгрейд</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="flex items-center gap-4">
+                                        <div>
+                                            <p class="text-xl font-bold">{{ ticket.trip.departure_time|date:"H:i" }}</p>
+                                            <p class="text-xs text-on-surface-variant">{{ ticket.start_station.station_name|default:"Казанский вокзал" }}</p>
+                                            <p class="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">Путь {{ ticket.departure_track }}</p>
+                                        </div>
+                                        <span class="material-symbols-outlined text-zinc-300">arrow_forward</span>
+                                        <div>
+                                            <p class="text-xl font-bold">{{ ticket.arrival_time|date:"H:i" }}</p>
+                                            <p class="text-xs text-on-surface-variant">{{ ticket.end_station.station_name|default:"Московский вокзал" }}</p>
+                                            <p class="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">Путь {{ ticket.arrival_track }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Seat Info & Actions -->
+                                <div
+                                    class="flex flex-col items-start md:items-end justify-between border-t md:border-t-0 md:border-l border-surface-variant pt-4 md:pt-0 md:pl-6">
+                                    <div class="grid grid-cols-2 md:text-right gap-x-8 gap-y-3 mb-4 w-full">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-zinc-400 uppercase tracking-wider">Вагон</span>
+                                            <span class="font-bold">{{ ticket.wagon }}</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-zinc-400 uppercase tracking-wider">Класс</span>
+                                            <span class="font-bold">{{ ticket.wagon_class }}</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-zinc-400 uppercase tracking-wider">Место</span>
+                                            <span class="font-bold">{{ ticket.seat }}</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-zinc-400 uppercase tracking-wider">Расположение</span>
+                                            <span class="font-bold text-sm">{{ ticket.seat_location }}</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-zinc-400 uppercase tracking-wider">Тип места</span>
+                                            <span class="font-bold text-sm">{{ ticket.seat_type }}</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-zinc-400 uppercase tracking-wider">Цена</span>
+                                            <span class="font-bold text-sm">{{ ticket.price }} ₽</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="qr-action-container hidden mt-auto pt-4 w-full md:w-auto">
+                                        <button type="button" class="show-qr-btn w-full md:w-auto text-[11px] text-primary font-bold uppercase tracking-wide border border-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-surface transition-all"
+                                            data-qr-content="Билет: {{ ticket.trip.train_num }}&#10;Маршрут: {{ ticket.start_station.station_name|default:'Казанский вокзал' }} - {{ ticket.end_station.station_name|default:'Московский вокзал' }}&#10;Отправление: {{ ticket.trip.departure_time|date:'d.m.Y H:i' }}&#10;Прибытие: {{ ticket.arrival_time|date:'d.m.Y H:i' }}&#10;Вагон: {{ ticket.wagon }}, Место: {{ ticket.seat }} ({{ ticket.wagon_class }}, {{ ticket.seat_location }}, {{ ticket.seat_type }})&#10;Пассажир: {{ user.fio }}, {{ user.gender }}, {{ user.birth_date|date:'d.m.Y' }}&#10;Документ: {{ ticket.doc.doc_type }} {{ ticket.doc.doc_num }} от {{ ticket.doc.issue_date|date:'d.m.Y' }}&#10;Статус: {{ ticket.status_of_ticket }}">
+                                            Показать QR-код
+                                        </button>
+                                    </div>
+
+                                    <div class="services-action-container hidden mt-auto pt-4 w-full md:w-auto">
+                                        <button type="button" class="show-services-btn w-full md:w-auto text-[11px] text-primary font-bold uppercase tracking-wide border border-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-surface transition-all"
+                                            data-ticket-id="{{ ticket.id }}"
+                                            data-status="{{ ticket.status_of_ticket }}"
+                                            data-services="{% for bs in ticket.bookedservices_set.all %}{{ bs.service.id }}|{{ bs.service.service_name }}|{{ bs.service.price }}{% if not forloop.last %}||{% endif %}{% empty %}Нет дополнительных услуг{% endfor %}">
+                                            Доп. услуги
+                                        </button>
+                                    </div>
+
+                                    <div class="cancel-action-container hidden mt-auto pt-4 w-full md:w-auto">
+                                        {% if ticket.status_of_ticket != 'Отменен' %}
+                                        <form action="{% url 'profile_cancel_ticket' ticket.id %}" method="POST"
+                                            onsubmit="return confirm('Вы уверены, что хотите сдать этот билет? Денежные средства будут возвращены.');"
+                                            class="w-full md:w-auto">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                class="w-full md:w-auto text-[11px] text-error font-bold uppercase tracking-wide border border-error px-4 py-2 rounded-lg hover:bg-error hover:text-white transition-all">
+                                                Сдать билет
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <div class="w-full md:w-auto text-center md:text-right">
+                                            <span class="inline-block text-[11px] text-zinc-400 font-bold uppercase tracking-wide border border-zinc-200 px-4 py-2 rounded-lg bg-zinc-50">
+                                                Билет сдан
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div
+                        class="text-center py-16 bg-surface-container-lowest border border-dashed border-surface-variant rounded-xl flex flex-col items-center">
+                        <span class="material-symbols-outlined text-4xl text-zinc-300 mb-3">train</span>
+                        <p class="text-on-surface-variant text-sm mb-4">Вы пока не совершали поездок.</p>
+                        <a href="/"
+                            class="bg-[#D1FF00] text-on-primary-fixed px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-[#bce600] transition-colors">Найти
+                            билеты</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tab: Notifications -->
+            <div id="tab-notifications" class="tab-content">
+                <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm p-6 md:p-8">
+                    <h2 class="text-2xl font-bold text-on-surface mb-8">Уведомления</h2>
+
+                    {% if notifications %}
+                    <div class="flex flex-col gap-3">
+                        {% for notif in notifications %}
+                        <div
+                            class="flex flex-col md:flex-row items-center justify-between border border-surface-variant rounded-xl p-6 bg-surface hover:bg-surface-container-lowest transition-all shadow-sm gap-6">
+                            <div class="flex flex-grow flex-col md:flex-row items-start md:items-center gap-8">
+                                <div class="shrink-0 flex flex-col gap-1 w-32">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-on-surface">{{ notif.trip.train_num|default:"Номер" }}</span>
+                                    </div>
+                                    <p class="text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">Вагон {{ notif.wagon_num }}</p>
+                                    {% if notif.trip %}
+                                    <p class="text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">{{ notif.trip.departure_time|date:"j E Y" }}</p>
+                                    {% else %}
+                                    <p class="text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">Дата не определена</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="flex-1 flex items-center justify-center">
+                                    <div class="w-44">
+                                        {% if notif.trip %}
+                                        <p class="text-xl font-bold text-on-surface">{{ notif.trip.departure_time|date:"H:i" }}</p>
+                                        {% else %}
+                                        <p class="text-xl font-bold text-on-surface">--:--</p>
+                                        {% endif %}
+                                        <p class="text-xs text-on-surface-variant">{{ notif.departure_point.station_name|default:"Казанский вокзал" }}</p>
+                                        <p class="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">Путь {{ notif.departure_track }}</p>
+                                    </div>
+                                    <span class="material-symbols-outlined text-zinc-300 ml-0 mr-8">arrow_forward</span>
+                                    <div class="w-44">
+                                        {% if notif.trip %}
+                                        <p class="text-xl font-bold text-on-surface">{{ notif.arrival_time|date:"H:i" }}</p>
+                                        {% else %}
+                                        <p class="text-xl font-bold text-on-surface">--:--</p>
+                                        {% endif %}
+                                        <p class="text-xs text-on-surface-variant">{{ notif.arrival_point.station_name|default:"Московский вокзал" }}</p>
+                                        <p class="text-[10px] text-zinc-500 mt-1 uppercase tracking-wider">Путь {{ notif.arrival_track }}</p>
+                                    </div>
+                                </div>
+
+                            </div>
+                            
+                            <form action="{% url 'profile_delete_notification' notif.id %}" method="POST" class="shrink-0">
+                                {% csrf_token %}
+                                <button type="submit" class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-error hover:bg-error/10 transition-all"
+                                    title="Удалить уведомление">
+                                    <span class="material-symbols-outlined text-[22px]">delete</span>
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div
+                        class="text-center py-16 bg-surface-container-lowest border border-dashed border-surface-variant rounded-xl flex flex-col items-center">
+                        <span class="material-symbols-outlined text-4xl text-zinc-300 mb-3">notifications_off</span>
+                        <p class="text-on-surface-variant text-sm">У вас нет новых уведомлений.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Document -->
+<div id="add-doc-modal"
+    class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
+    <div
+        class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="document.getElementById('add-doc-modal').classList.add('hidden')"
+            class="absolute top-4 right-4 text-zinc-400 hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <h3 class="text-xl font-bold text-on-surface mb-6">Добавить документ</h3>
+
+        <form action="{% url 'profile_add_doc' %}" method="POST" class="flex flex-col gap-4">
+            {% csrf_token %}
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Тип
+                    документа</label>
+                <select name="doc_type" id="doc_type_select"
+                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow appearance-none"
+                    required>
+                    <option value="Паспорт РФ">Паспорт РФ</option>
+                    <option value="Загранпаспорт">Загранпаспорт</option>
+                    <option value="Свидетельство о рождении">Свидетельство о рождении</option>
+                    <option value="Иностранный документ">Иностранный документ</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Номер
+                    документа</label>
+                <input type="text" name="doc_num" id="doc_num_input"
+                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow font-mono tracking-widest"
+                    placeholder="XXXX XXXXXX" required>
+            </div>
+
+            <div class="flex flex-col gap-1.5 mb-2">
+                <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Дата
+                    выдачи</label>
+                <input type="text" id="issue_date" name="issue_date"
+                    class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                    placeholder="Дата выдачи">
+            </div>
+
+            <button type="submit"
+                class="bg-[#D1FF00] text-on-primary-fixed w-full py-3.5 rounded-xl font-bold uppercase tracking-wide hover:bg-[#bce600] transition-colors shadow-sm text-[13px]">
+                Сохранить
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Document -->
+<div id="edit-doc-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="document.getElementById('edit-doc-modal').classList.add('hidden')" class="absolute top-4 right-4 text-zinc-400 hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <h3 class="text-xl font-bold text-on-surface mb-6">Изменить документ</h3>
+
+        <form id="edit-doc-form" method="POST" class="flex flex-col gap-4">
+            {% csrf_token %}
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Тип документа</label>
+                <select name="doc_type" id="edit_doc_type_select" class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow appearance-none" required>
+                    <option value="Паспорт РФ">Паспорт РФ</option>
+                    <option value="Загранпаспорт">Загранпаспорт</option>
+                    <option value="Свидетельство о рождении">Свидетельство о рождении</option>
+                    <option value="Иностранный документ">Иностранный документ</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Номер документа</label>
+                <input type="text" name="doc_num" id="edit_doc_num_input" class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow font-mono tracking-widest" required>
+            </div>
+
+            <div class="flex flex-col gap-1.5 mb-2">
+                <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Дата выдачи</label>
+                <input type="text" id="edit_issue_date" name="issue_date" class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow" placeholder="Дата выдачи">
+            </div>
+
+            <button type="submit" class="bg-[#D1FF00] text-on-primary-fixed w-full py-3.5 rounded-xl font-bold uppercase tracking-wide hover:bg-[#bce600] transition-colors shadow-sm text-[13px]">
+                Изменить
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Delete Document -->
+<div id="delete-doc-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="document.getElementById('delete-doc-modal').classList.add('hidden')" class="absolute top-4 right-4 text-zinc-400 hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <div class="flex items-center gap-3 mb-4">
+            <span class="material-symbols-outlined text-error text-3xl">warning</span>
+            <h3 class="text-lg font-bold text-on-surface">Удаление документа</h3>
+        </div>
+        <p class="text-sm text-on-surface-variant mb-6">Вы уверены, что хотите удалить этот документ? Отменить это действие будет невозможно.</p>
+        <div class="flex flex-col gap-3">
+            <form id="delete-doc-form" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="w-full px-4 py-3 rounded-xl bg-error text-white text-sm font-bold hover:bg-error/90 transition-all">
+                    Удалить документ
+                </button>
+            </form>
+            <button onclick="document.getElementById('delete-doc-modal').classList.add('hidden')" class="w-full px-4 py-3 rounded-xl bg-surface-container text-on-surface text-sm font-bold hover:bg-surface-container-highest transition-all">
+                Отмена
+            </button>
+        </div>
+    </div>
+</div>
+<div id="delete-account-modal"
+    class="fixed inset-0 z-[200] hidden flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+    <div
+        class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="document.getElementById('delete-account-modal').classList.add('hidden')"
+            class="absolute top-4 right-4 text-zinc-400 hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <div class="flex items-center gap-3 mb-4">
+            <span class="material-symbols-outlined text-error text-3xl">warning</span>
+            <h3 class="text-lg font-bold text-on-surface">Удаление аккаунта</h3>
+        </div>
+        <p class="text-sm text-on-surface-variant mb-6">Вы уверены, что хотите удалить аккаунт? Это действие необратимо.</p>
+        <div class="flex flex-col gap-3">
+            <form action="{% url 'delete_account' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="mode" value="simple">
+                <button type="submit"
+                    class="w-full px-4 py-3 rounded-xl border border-error text-error text-sm font-bold hover:bg-error hover:text-white transition-all">
+                    Удалить аккаунт
+                </button>
+            </form>
+            <form action="{% url 'delete_account' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="mode" value="full_delete">
+                <button type="submit"
+                    class="w-full px-4 py-3 rounded-xl bg-error text-white text-sm font-bold hover:bg-error/90 transition-all">
+                    Полное удаление (все билеты, документы и данные)
+                </button>
+            </form>
+            <button onclick="document.getElementById('delete-account-modal').classList.add('hidden')"
+                class="w-full px-4 py-3 rounded-xl bg-surface-container text-on-surface text-sm font-bold hover:bg-surface-container-highest transition-all">
+                Отмена
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- QR Modal -->
+<div id="qr-modal" class="fixed inset-0 z-[100] hidden flex-col items-center justify-center px-4 bg-black/60 backdrop-blur-sm" style="display: none;">
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-8 max-w-sm w-full relative flex flex-col items-center">
+        <button onclick="document.getElementById('qr-modal').style.display='none'" class="absolute top-4 right-4 text-zinc-400 hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <h3 class="text-xl font-bold text-on-surface mb-6">Электронный билет</h3>
+        <div class="bg-white p-4 rounded-xl border border-zinc-200">
+            <img id="qr-code-img" src="" alt="QR Code" class="w-48 h-48 object-contain">
+        </div>
+        <p class="text-xs text-on-surface-variant mt-4 text-center">Предъявите этот QR-код при посадке в поезд</p>
+    </div>
+</div>
+
+<!-- Services Modal -->
+<style>
+    .elegant-scrollbar::-webkit-scrollbar { width: 4px; }
+    .elegant-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .elegant-scrollbar::-webkit-scrollbar-thumb { background-color: #d4d4d8; border-radius: 10px; }
+    .elegant-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #a1a1aa; }
+</style>
+<div id="services-modal" class="fixed inset-0 z-[100] hidden flex-col items-center justify-center px-4 bg-black/60 backdrop-blur-sm" style="display: none;">
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-5 max-w-sm w-full relative flex flex-col max-h-[90vh] overflow-hidden">
+        <button onclick="closeServicesModal()" class="absolute top-6 right-6 text-zinc-400 hover:text-on-surface transition-colors z-10 bg-surface-container-lowest rounded-full">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        
+        <!-- STEP 1: VIEW SERVICES -->
+        <div id="step-view-services" class="flex flex-col w-full overflow-y-auto elegant-scrollbar pr-2">
+            <h3 class="text-lg font-bold text-on-surface mb-4 pr-6">Оформленные услуги</h3>
+            <div id="services-list" class="flex flex-col gap-2">
+                <!-- Services will be inserted here -->
+            </div>
+            {% if dynamic_services %}
+            <button type="button" onclick="goToStepAddServices()" class="mt-6 shrink-0 w-full border border-primary text-primary text-[11px] font-bold uppercase tracking-wide py-2.5 rounded-lg hover:bg-primary hover:text-surface transition-all shadow-sm">
+                Добавить новую доп услугу
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- STEP 2: ADD NEW SERVICES & CHECKOUT -->
+        <div id="step-add-services" class="hidden flex-col w-full h-full">
+            <div class="flex items-center gap-3 mb-4 pr-6 shrink-0">
+                <button type="button" onclick="goToStepViewServices()" class="text-zinc-400 hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h3 class="text-lg font-bold text-on-surface">Новые услуги</h3>
+            </div>
+
+            <div class="flex flex-col gap-6 overflow-y-auto elegant-scrollbar pr-2 pb-4 flex-grow">
+                <!-- Select services -->
+                <div class="flex flex-col gap-3" id="available-services-list">
+                    {% for service in dynamic_services %}
+                    <label class="flex items-start gap-2.5 p-2.5 border border-surface-variant rounded-xl hover:bg-surface-container-lowest transition-colors cursor-pointer has-[:checked]:border-[#D1FF00] has-[:checked]:bg-[#D1FF00]/5 shrink-0">
+                        <input type="checkbox" name="dynamic_service_chk" value="{{ service.id }}" data-price="{{ service.price }}" data-name="{{ service.service_name }}" class="mt-1 w-4 h-4 text-[#D1FF00] bg-surface border-surface-variant rounded focus:ring-[#D1FF00] focus:ring-2 accent-primary" onchange="calculateAddServicesCheckout()">
+                        <div class="flex flex-col flex-grow">
+                            <span class="text-[13px] font-bold text-on-surface">{{ service.service_name }}</span>
+                            <span class="text-[11px] text-on-surface-variant mt-0.5">{{ service.description }}</span>
+                        </div>
+                        <div class="shrink-0 font-bold text-[13px] text-on-surface">
+                            {{ service.price }} ₽
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+
+            </div>
+            <button type="button" id="btn-proceed-to-pay" onclick="goToStepPayServices()" class="mt-4 shrink-0 w-full border border-primary text-primary text-[11px] font-bold uppercase tracking-wide py-2.5 rounded-lg hover:bg-primary hover:text-surface transition-all shadow-sm hidden">
+                Перейти к оплате
+            </button>
+        </div>
+
+        <!-- STEP 3: PAY FOR NEW SERVICES -->
+        <div id="step-pay-services" class="hidden flex-col w-full h-full">
+            <div class="flex items-center gap-3 mb-4 pr-6 shrink-0">
+                <button type="button" onclick="goToStepAddServices()" class="text-zinc-400 hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h3 class="text-lg font-bold text-on-surface">Оплата услуг</h3>
+            </div>
+
+            <div class="flex flex-col gap-6 overflow-y-auto elegant-scrollbar pr-2 pb-4 flex-grow">
+                <!-- РАСЧЕТ СТОИМОСТИ -->
+                <div class="bg-surface border border-surface-variant rounded-2xl p-5 shadow-sm" id="add-services-breakdown">
+                    <h2 class="text-sm font-black flex items-center gap-2 mb-4 uppercase tracking-tight text-on-surface">
+                        <span class="material-symbols-outlined text-primary text-[18px]">receipt_long</span>
+                        Расчет стоимости
+                    </h2>
+                    <div class="flex flex-col gap-2 text-sm" id="breakdown-items">
+                        <!-- Items injected by JS -->
+                    </div>
+                    <div class="flex justify-between items-center pt-3 mt-3 border-t border-surface-variant">
+                        <span class="font-bold text-on-surface text-sm">Итого</span>
+                        <span class="text-lg font-black text-on-surface" id="add-services-total">0 ₽</span>
+                    </div>
+                </div>
+
+                <!-- ОПЛАТА -->
+                <div class="bg-surface border border-surface-variant rounded-2xl p-5 shadow-sm" id="add-services-payment">
+                    <h2 class="text-sm font-black flex items-center gap-2 mb-4 uppercase tracking-tight text-on-surface">
+                        <span class="material-symbols-outlined text-primary text-[18px]">payments</span>
+                        Оплата
+                    </h2>
+
+                    <div class="flex flex-col gap-5">
+                        <!-- Method Selector -->
+                        <div class="flex gap-2 w-full">
+                            <label class="cursor-pointer flex-1">
+                                <input type="radio" name="add_payment_method" value="card" class="peer hidden" checked onchange="toggleAddPaymentMethod('card')">
+                                <div class="border border-surface-variant peer-checked:border-[#D1FF00] peer-checked:bg-[#D1FF00]/5 rounded-xl p-2.5 flex flex-col items-center gap-1 transition-all">
+                                    <span class="material-symbols-outlined text-lg text-zinc-400 peer-checked:text-primary">credit_card</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-widest">Карта</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer flex-1">
+                                <input type="radio" name="add_payment_method" value="qr" class="peer hidden" onchange="toggleAddPaymentMethod('qr')">
+                                <div class="border border-surface-variant peer-checked:border-[#D1FF00] peer-checked:bg-[#D1FF00]/5 rounded-xl p-2.5 flex flex-col items-center gap-1 transition-all">
+                                    <span class="material-symbols-outlined text-lg text-zinc-400 peer-checked:text-primary">qr_code_scanner</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-widest">QR-код</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Form -->
+                        <form id="add-services-checkout-form" method="POST" action="" class="flex flex-col gap-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="dynamic_services" id="checkout-dynamic-services" value="">
+                            
+                            <div id="add-card-fields" class="flex flex-col gap-4">
+                                <input type="text" id="add-c-num-field" placeholder="Номер карты" maxlength="19" class="w-full bg-surface-container-lowest border border-surface-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm tracking-widest shadow-inner" required>
+                                <div class="flex gap-4">
+                                    <input type="text" id="add-c-exp-field" placeholder="ММ/ГГ" maxlength="5" class="w-1/2 bg-surface-container-lowest border border-surface-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm tracking-widest shadow-inner text-center" required>
+                                    <input type="text" id="add-c-cvv-field" placeholder="CVV" maxlength="3" class="w-1/2 bg-surface-container-lowest border border-surface-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm tracking-widest shadow-inner text-center" style="-webkit-text-security: disc;" required>
+                                </div>
+                                <input type="text" id="add-c-name-field" placeholder="Владелец (IVAN IVANOV)" class="w-full bg-surface-container-lowest border border-surface-variant rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm shadow-inner uppercase" required>
+                            </div>
+
+                            <div id="add-qr-fields" class="hidden flex-col items-center justify-center py-4 bg-surface-container-lowest rounded-2xl border-2 border-dashed border-surface-variant">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D1%83%D1%81%D0%BB%D1%83%D0%B3" alt="QR" class="w-24 h-24 shadow-sm rounded-lg border-2 border-white mb-2">
+                                <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Отсканируйте код</span>
+                            </div>
+
+                            <button type="submit" id="add-submit-btn" class="w-full bg-black text-[#D1FF00] text-xs font-black uppercase tracking-widest py-4 rounded-xl hover:bg-zinc-800 transition-all shadow-lg flex justify-center items-center gap-2 active:scale-[0.98]">
+                                <span id="add-submit-btn-text">Оплатить</span>
+                                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                            </button>
+                            
+                            <div class="flex items-center gap-3 mt-2 pt-4 border-t border-surface-variant/50">
+                                <div class="w-8 h-8 rounded-full bg-surface-container-lowest flex items-center justify-center text-zinc-400">
+                                    <span class="material-symbols-outlined text-sm">alternate_email</span>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block">Билет и чек будут отправлены на:</span>
+                                    <span class="text-xs font-bold">{{ user.email }}</span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardNumber = document.getElementById('add-c-num-field');
+        const cardDate = document.getElementById('add-c-exp-field');
+        const cardCvv = document.getElementById('add-c-cvv-field');
+        const cardName = document.getElementById('add-c-name-field');
+
+        if(cardNumber) cardNumber.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) formattedValue += ' ';
+                formattedValue += value[i];
+            }
+            e.target.value = formattedValue;
+        });
+
+        if(cardDate) cardDate.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                let month = parseInt(value.substring(0, 2));
+                if (month > 12) value = '12' + value.substring(2);
+                if (month === 0) value = '01' + value.substring(2);
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+        
+        if(cardCvv) cardCvv.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 3);
+        });
+
+        if(cardName) cardName.addEventListener('input', function(e) {
+            this.setCustomValidity('');
+            this.value = this.value.toUpperCase().replace(/[^A-Z\s]/g, '');
+        });
+
+        const addServicesForm = document.getElementById('add-services-checkout-form');
+        if (addServicesForm) {
+            addServicesForm.addEventListener('submit', function(e) {
+                const isCard = document.querySelector('input[name="add_payment_method"]:checked').value === 'card';
+                if (isCard) {
+                    const cNum = document.getElementById('add-c-num-field');
+                    const cExp = document.getElementById('add-c-exp-field');
+                    const cCvv = document.getElementById('add-c-cvv-field');
+                    
+                    if (cNum.value.length !== 19) {
+                        e.preventDefault();
+                        cNum.setCustomValidity('Пожалуйста, введите корректный номер карты (16 цифр).');
+                        cNum.reportValidity();
+                        return;
+                    }
+                    if (cExp.value.length !== 5) {
+                        e.preventDefault();
+                        cExp.setCustomValidity('Пожалуйста, полностью введите срок действия карты (ММ/ГГ).');
+                        cExp.reportValidity();
+                        return;
+                    }
+                    if (cCvv.value.length !== 3) {
+                        e.preventDefault();
+                        cCvv.setCustomValidity('Пожалуйста, введите 3 цифры CVV-кода.');
+                        cCvv.reportValidity();
+                        return;
+                    }
+                }
+            });
+        }
+    });
+</script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js">
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardNumber = document.getElementById('add-c-num-field');
+        const cardDate = document.getElementById('add-c-exp-field');
+        const cardCvv = document.getElementById('add-c-cvv-field');
+        const cardName = document.getElementById('add-c-name-field');
+
+        if(cardNumber) cardNumber.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) formattedValue += ' ';
+                formattedValue += value[i];
+            }
+            e.target.value = formattedValue;
+        });
+
+        if(cardDate) cardDate.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                let month = parseInt(value.substring(0, 2));
+                if (month > 12) value = '12' + value.substring(2);
+                if (month === 0) value = '01' + value.substring(2);
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+        
+        if(cardCvv) cardCvv.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 3);
+        });
+
+        if(cardName) cardName.addEventListener('input', function(e) {
+            this.setCustomValidity('');
+            this.value = this.value.toUpperCase().replace(/[^A-Z\s]/g, '');
+        });
+
+        const addServicesForm = document.getElementById('add-services-checkout-form');
+        if (addServicesForm) {
+            addServicesForm.addEventListener('submit', function(e) {
+                const isCard = document.querySelector('input[name="add_payment_method"]:checked').value === 'card';
+                if (isCard) {
+                    const cNum = document.getElementById('add-c-num-field');
+                    const cExp = document.getElementById('add-c-exp-field');
+                    const cCvv = document.getElementById('add-c-cvv-field');
+                    
+                    if (cNum.value.length !== 19) {
+                        e.preventDefault();
+                        cNum.setCustomValidity('Пожалуйста, введите корректный номер карты (16 цифр).');
+                        cNum.reportValidity();
+                        return;
+                    }
+                    if (cExp.value.length !== 5) {
+                        e.preventDefault();
+                        cExp.setCustomValidity('Пожалуйста, полностью введите срок действия карты (ММ/ГГ).');
+                        cExp.reportValidity();
+                        return;
+                    }
+                    if (cCvv.value.length !== 3) {
+                        e.preventDefault();
+                        cCvv.setCustomValidity('Пожалуйста, введите 3 цифры CVV-кода.');
+                        cCvv.reportValidity();
+                        return;
+                    }
+                }
+            });
+        }
+    });
+</script>
+<script>
+    function switchTab(tabId) {
+        // Hide all contents
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        // Remove active class from buttons
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.classList.remove('active');
+            el.classList.add('text-on-surface', 'hover:bg-surface-container');
+            el.style.backgroundColor = '';
+        });
+
+        // Show selected content
+        document.getElementById('tab-' + tabId).classList.add('active');
+
+        // Highlight selected button
+        const activeBtn = document.getElementById('btn-' + tabId);
+        activeBtn.classList.add('active');
+        activeBtn.classList.remove('text-on-surface', 'hover:bg-surface-container');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const docTypeSelect = document.getElementById('doc_type_select');
+        const docNumInput = document.getElementById('doc_num_input');
+        
+        if (docTypeSelect && docNumInput) {
+            const docFormats = {
+                'Паспорт РФ':             'XXXX XXXXXX',
+                'Загранпаспорт':          'XX XXXXXXX',
+                'Свидетельство о рождении': 'I-ЕА XXXXXX',
+                'Иностранный документ':   'Введите номер документа',
+            };
+
+            const updateDocPlaceholder = () => {
+                docNumInput.placeholder = docFormats[docTypeSelect.value] || 'Введите номер документа';
+            };
+
+            // Map visually similar Latin→Cyrillic for birth certificate letter input
+            const latinToCyr = {'A':'А','B':'В','C':'С','E':'Е','H':'Н','K':'К','M':'М','O':'О','P':'Р','T':'Т','X':'Х','a':'а','b':'в','c':'с','e':'е','h':'н','k':'к','m':'м','o':'о','p':'р','t':'т','x':'х'};
+
+            const formatDocNum = (target) => {
+                const type = docTypeSelect.value;
+                let val = target.value;
+
+                if (type === 'Паспорт РФ') {
+                    val = val.replace(/\D/g, '').substring(0, 10);
+                    if (val.length > 4) val = val.substring(0, 4) + ' ' + val.substring(4);
+                    target.value = val;
+
+                } else if (type === 'Загранпаспорт') {
+                    val = val.replace(/\D/g, '').substring(0, 9);
+                    if (val.length > 2) val = val.substring(0, 2) + ' ' + val.substring(2);
+                    target.value = val;
+
+                } else if (type === 'Свидетельство о рождении') {
+                    // Allow: latin Roman numerals [IVXLCDM], then dash, then 2 cyrillic letters, then space, then 6 digits
+                    // Auto-convert visually-similar latin to cyrillic in letter section
+                    let upper = val.toUpperCase();
+
+                    // Strip everything except Roman numerals, Cyrillic, digits, dash, space
+                    let clean = upper.replace(/[^IVXLCDMА-ЯЁA-Z\d\-]/g, '');
+                    let stripped = clean.replace(/[\-]/g, '');
+
+                    // Parse: Roman part, then 2 letter part (Cyrillic), then 6 digits
+                    let roman = '';
+                    let letters = '';
+                    let digits = '';
+
+                    let i = 0;
+                    // Collect roman numeral chars
+                    while (i < stripped.length && 'IVXLCDM'.includes(stripped[i])) { roman += stripped[i]; i++; }
+                    // Collect up to 2 letter chars (Cyrillic, auto-convert Latin lookalikes)
+                    while (i < stripped.length && letters.length < 2) {
+                        let ch = stripped[i];
+                        // Convert latin lookalike → Cyrillic
+                        if (/[A-Z]/.test(ch) && !('IVXLCDM'.includes(ch))) {
+                            let cyrMap = {'A':'А','B':'В','C':'С','E':'Е','H':'Н','K':'К','M':'М','O':'О','P':'Р','T':'Т','X':'Х'};
+                            ch = cyrMap[ch] || ch;
+                        }
+                        if (/[А-ЯЁ]/.test(ch)) { letters += ch; i++; }
+                        else break;
+                    }
+                    // Collect up to 6 digits
+                    while (i < stripped.length && digits.length < 6) {
+                        if (/\d/.test(stripped[i])) { digits += stripped[i]; }
+                        i++;
+                    }
+
+                    let result = roman;
+                    if (letters) result += '-' + letters;
+                    if (digits) result += ' ' + digits;
+                    target.value = result;
+                }
+            };
+
+            docTypeSelect.addEventListener('change', () => {
+                updateDocPlaceholder();
+                docNumInput.value = '';
+            });
+
+            docNumInput.addEventListener('input', (e) => { formatDocNum(e.target); });
+
+            updateDocPlaceholder();
+        }
+
+        flatpickr("#birth_date", {
+            locale: "ru",
+            dateFormat: "d.m.Y",
+            maxDate: "today",
+            allowInput: true
+        });
+        flatpickr("#issue_date", {
+            locale: "ru",
+            dateFormat: "d.m.Y",
+            maxDate: "today",
+            allowInput: true
+        });
+        flatpickr("#edit_issue_date", {
+            locale: "ru",
+            dateFormat: "d.m.Y",
+            maxDate: "today",
+            allowInput: true
+        });
+
+        // Setup format for edit modal as well
+        const editDocTypeSelect = document.getElementById('edit_doc_type_select');
+        const editDocNumInput = document.getElementById('edit_doc_num_input');
+        
+        if (editDocTypeSelect && editDocNumInput) {
+            const updateEditDocPlaceholder = () => {
+                const docFormats = {
+                    'Паспорт РФ':             'XXXX XXXXXX',
+                    'Загранпаспорт':          'XX XXXXXXX',
+                    'Свидетельство о рождении': 'I-ЕА XXXXXX',
+                    'Иностранный документ':   'Введите номер документа',
+                };
+                editDocNumInput.placeholder = docFormats[editDocTypeSelect.value] || 'Введите номер документа';
+            };
+
+            editDocTypeSelect.addEventListener('change', () => {
+                updateEditDocPlaceholder();
+                editDocNumInput.value = '';
+            });
+
+            // Borrow formatDocNum logic from above if needed, but since it's same we can just map it
+            // For brevity we reuse the function by moving formatDocNum out or defining it here again
+            // For now, let's redefine the formatter for the edit input
+            const formatEditDocNum = (target) => {
+                const type = editDocTypeSelect.value;
+                let val = target.value;
+
+                if (type === 'Паспорт РФ') {
+                    val = val.replace(/\D/g, '').substring(0, 10);
+                    if (val.length > 4) val = val.substring(0, 4) + ' ' + val.substring(4);
+                    target.value = val;
+                } else if (type === 'Загранпаспорт') {
+                    val = val.replace(/\D/g, '').substring(0, 9);
+                    if (val.length > 2) val = val.substring(0, 2) + ' ' + val.substring(2);
+                    target.value = val;
+                } else if (type === 'Свидетельство о рождении') {
+                    let upper = val.toUpperCase();
+                    let clean = upper.replace(/[^IVXLCDMА-ЯЁA-Z\d\-]/g, '');
+                    let stripped = clean.replace(/[\-]/g, '');
+
+                    let roman = '', letters = '', digits = '', i = 0;
+                    while (i < stripped.length && 'IVXLCDM'.includes(stripped[i])) { roman += stripped[i]; i++; }
+                    while (i < stripped.length && letters.length < 2) {
+                        let ch = stripped[i];
+                        if (/[A-Z]/.test(ch) && !('IVXLCDM'.includes(ch))) {
+                            let cyrMap = {'A':'А','B':'В','C':'С','E':'Е','H':'Н','K':'К','M':'М','O':'О','P':'Р','T':'Т','X':'Х'};
+                            ch = cyrMap[ch] || ch;
+                        }
+                        if (/[А-ЯЁ]/.test(ch)) { letters += ch; i++; } else break;
+                    }
+                    while (i < stripped.length && digits.length < 6) {
+                        if (/\d/.test(stripped[i])) { digits += stripped[i]; }
+                        i++;
+                    }
+
+                    let result = roman;
+                    if (letters) result += '-' + letters;
+                    if (digits) result += ' ' + digits;
+                    target.value = result;
+                }
+            };
+            
+            editDocNumInput.addEventListener('input', (e) => { formatEditDocNum(e.target); });
+            updateEditDocPlaceholder();
+        }
+
+        const phoneInput = document.getElementById('phone_input');
+        if (phoneInput) {
+            const formatPhone = (target) => {
+                let val = target.value.replace(/\D/g, '');
+                if (val.startsWith('7') || val.startsWith('8')) val = val.substring(1);
+                if (val.length > 0 && val[0] !== '9') val = '9' + val;
+                let x = val.match(/(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+                if (!x) return;
+                target.value = !x[1] ? '' : '+7 (' + x[1] + (x[2] ? ') ' + x[2] : '') + (x[3] ? '-' + x[3] : '') + (x[4] ? '-' + x[4] : '');
+            };
+
+            phoneInput.addEventListener('input', function (e) {
+                formatPhone(e.target);
+            });
+            
+            // Format existing value on page load
+            formatPhone(phoneInput);
+        }
+
+        const toggleCancelMode = document.getElementById('toggle-cancel-mode');
+        const toggleQrMode = document.getElementById('toggle-qr-mode');
+        const toggleServicesMode = document.getElementById('toggle-services-mode');
+        const cancelContainers = document.querySelectorAll('.cancel-action-container');
+        const qrContainers = document.querySelectorAll('.qr-action-container');
+        const servicesContainers = document.querySelectorAll('.services-action-container');
+
+        function hideAllTicketActions() {
+            if (toggleCancelMode) {
+                toggleCancelMode.classList.remove('text-error');
+                toggleCancelMode.classList.add('text-zinc-300');
+                cancelContainers.forEach(c => c.classList.add('hidden'));
+            }
+            if (toggleQrMode) {
+                toggleQrMode.classList.remove('text-primary');
+                toggleQrMode.classList.add('text-zinc-300');
+                qrContainers.forEach(c => c.classList.add('hidden'));
+            }
+            if (toggleServicesMode) {
+                toggleServicesMode.classList.remove('text-primary');
+                toggleServicesMode.classList.add('text-zinc-300');
+                servicesContainers.forEach(c => c.classList.add('hidden'));
+            }
+        }
+
+        if (toggleCancelMode) {
+            toggleCancelMode.addEventListener('click', function() {
+                const isRed = this.classList.contains('text-error');
+                hideAllTicketActions();
+                if (!isRed) {
+                    this.classList.remove('text-zinc-300');
+                    this.classList.add('text-error');
+                    cancelContainers.forEach(c => c.classList.remove('hidden'));
+                }
+            });
+        }
+
+        if (toggleQrMode) {
+            toggleQrMode.addEventListener('click', function() {
+                const isPrimary = this.classList.contains('text-primary');
+                hideAllTicketActions();
+                if (!isPrimary) {
+                    this.classList.remove('text-zinc-300');
+                    this.classList.add('text-primary');
+                    qrContainers.forEach(c => c.classList.remove('hidden'));
+                }
+            });
+        }
+
+        if (toggleServicesMode) {
+            toggleServicesMode.addEventListener('click', function() {
+                const isPrimary = this.classList.contains('text-primary');
+                hideAllTicketActions();
+                if (!isPrimary) {
+                    this.classList.remove('text-zinc-300');
+                    this.classList.add('text-primary');
+                    servicesContainers.forEach(c => c.classList.remove('hidden'));
+                }
+            });
+        }
+
+        const toggleDeleteDocMode = document.getElementById('toggle-delete-doc-mode');
+        const toggleEditDocMode = document.getElementById('toggle-edit-doc-mode');
+        const docDeleteActions = document.querySelectorAll('.doc-delete-action');
+        const docEditActions = document.querySelectorAll('.doc-edit-action');
+
+        if (toggleDeleteDocMode) {
+            toggleDeleteDocMode.addEventListener('click', function() {
+                const isRed = this.classList.contains('text-error');
+                
+                // Turn off Edit mode
+                if (toggleEditDocMode) {
+                    toggleEditDocMode.classList.remove('text-primary');
+                    toggleEditDocMode.classList.add('text-zinc-300');
+                    docEditActions.forEach(c => c.classList.add('hidden'));
+                }
+
+                if (isRed) {
+                    this.classList.remove('text-error');
+                    this.classList.add('text-zinc-300');
+                    docDeleteActions.forEach(c => c.classList.add('hidden'));
+                } else {
+                    this.classList.remove('text-zinc-300');
+                    this.classList.add('text-error');
+                    docDeleteActions.forEach(c => c.classList.remove('hidden'));
+                }
+            });
+        }
+
+        if (toggleEditDocMode) {
+            toggleEditDocMode.addEventListener('click', function() {
+                const isPrimary = this.classList.contains('text-primary');
+                
+                // Turn off Delete mode
+                if (toggleDeleteDocMode) {
+                    toggleDeleteDocMode.classList.remove('text-error');
+                    toggleDeleteDocMode.classList.add('text-zinc-300');
+                    docDeleteActions.forEach(c => c.classList.add('hidden'));
+                }
+
+                if (isPrimary) {
+                    this.classList.remove('text-primary');
+                    this.classList.add('text-zinc-300');
+                    docEditActions.forEach(c => c.classList.add('hidden'));
+                } else {
+                    this.classList.remove('text-zinc-300');
+                    this.classList.add('text-primary');
+                    docEditActions.forEach(c => c.classList.remove('hidden'));
+                }
+            });
+        }
+
+        // QR Generate
+        document.querySelectorAll('.show-qr-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const content = this.getAttribute('data-qr-content');
+                const url = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(content)}&margin=10`;
+                document.getElementById('qr-code-img').src = url;
+                document.getElementById('qr-modal').style.display = 'flex';
+            });
+        });
+
+        let currentTicketIdForServices = null;
+
+        document.querySelectorAll('.show-services-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const content = this.getAttribute('data-services');
+                const status = this.getAttribute('data-status');
+                currentTicketIdForServices = this.getAttribute('data-ticket-id');
+                
+                const addServicesBtn = document.getElementById('step-view-services').querySelector('button[onclick="goToStepAddServices()"]');
+                if (addServicesBtn) {
+                    if (status === 'Отменен' || status === 'Выполнен') {
+                        addServicesBtn.style.display = 'none';
+                    } else {
+                        addServicesBtn.style.display = 'block';
+                    }
+                }
+                const listContainer = document.getElementById('services-list');
+                listContainer.innerHTML = '';
+                
+                // Reset view
+                goToStepViewServices();
+                document.querySelectorAll('input[name="dynamic_service_chk"]').forEach(chk => chk.checked = false);
+                calculateAddServicesCheckout();
+                
+                const bookedServiceNames = [];
+                if (content === 'Нет дополнительных услуг' || !content) {
+                    listContainer.innerHTML = '<p class="text-sm text-on-surface-variant">У этого билета нет оформленных дополнительных услуг.</p>';
+                } else {
+                    const services = content.split('||');
+                    services.forEach(service => {
+                        const parts = service.split('|');
+                        if (parts.length >= 2) {
+                            // Extract name properly whether it's id|name|price or name|price
+                            const name = parts.length === 3 ? parts[1] : parts[0];
+                            const price = parts.length === 3 ? parts[2] : parts[1];
+                            bookedServiceNames.push(name.toLowerCase().trim());
+                            
+                            const item = document.createElement('div');
+                            item.className = 'flex items-end justify-between bg-surface px-3 py-2 rounded-lg border border-surface-variant shadow-sm';
+                            item.innerHTML = `
+                                <span class="text-[13px] font-semibold text-on-surface truncate pr-2">${name}</span>
+                                <div class="flex-grow border-b border-dotted border-surface-variant opacity-60 mx-1 relative top-[-5px]"></div>
+                                <span class="text-[13px] font-bold text-primary whitespace-nowrap pl-2">${price} ₽</span>
+                            `;
+                            listContainer.appendChild(item);
+                        }
+                    });
+                }
+                
+                // Hide ONLY specific already booked services in the 'Add New Services' list
+                document.querySelectorAll('input[name="dynamic_service_chk"]').forEach(chk => {
+                    const label = chk.closest('label');
+                    const serviceName = chk.getAttribute('data-name').toLowerCase().trim();
+                    const isUniqueService = serviceName.includes('бизнес-зал') || serviceName.includes('бел');
+                    
+                    if (isUniqueService && bookedServiceNames.includes(serviceName)) {
+                        label.style.display = 'none';
+                    } else {
+                        label.style.display = 'flex';
+                    }
+                });
+                
+                if (addServicesBtn) {
+                    if (status !== 'Отменен' && status !== 'Выполнен') {
+                        addServicesBtn.style.display = 'block';
+                    } else {
+                        addServicesBtn.style.display = 'none';
+                    }
+                }
+                
+                document.getElementById('services-modal').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        window.closeServicesModal = function() {
+            document.getElementById('services-modal').style.display='none';
+            document.body.style.overflow = '';
+        };
+
+        window.goToStepViewServices = function() {
+            document.getElementById('step-add-services').classList.add('hidden');
+            document.getElementById('step-add-services').classList.remove('flex');
+            document.getElementById('step-pay-services').classList.add('hidden');
+            document.getElementById('step-pay-services').classList.remove('flex');
+            document.getElementById('step-view-services').classList.add('flex');
+            document.getElementById('step-view-services').classList.remove('hidden');
+        };
+
+        window.goToStepAddServices = function() {
+            document.getElementById('step-view-services').classList.add('hidden');
+            document.getElementById('step-view-services').classList.remove('flex');
+            document.getElementById('step-pay-services').classList.add('hidden');
+            document.getElementById('step-pay-services').classList.remove('flex');
+            document.getElementById('step-add-services').classList.add('flex');
+            document.getElementById('step-add-services').classList.remove('hidden');
+        };
+        
+        window.goToStepPayServices = function() {
+            document.getElementById('step-add-services').classList.add('hidden');
+            document.getElementById('step-add-services').classList.remove('flex');
+            document.getElementById('step-pay-services').classList.add('flex');
+            document.getElementById('step-pay-services').classList.remove('hidden');
+        };
+
+        window.calculateAddServicesCheckout = function() {
+            let total = 0;
+            const breakdownItems = document.getElementById('breakdown-items');
+            breakdownItems.innerHTML = '';
+            
+            const selectedServices = [];
+            document.querySelectorAll('input[name="dynamic_service_chk"]:checked').forEach(chk => {
+                const price = parseInt(chk.getAttribute('data-price') || 0);
+                const name = chk.getAttribute('data-name');
+                total += price;
+                selectedServices.push(chk.value);
+                
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center py-1.5 border-b border-surface-variant/50 last:border-0';
+                item.innerHTML = `
+                    <span class="font-medium text-zinc-600">${name}</span>
+                    <span class="font-bold text-on-surface">${price} ₽</span>
+                `;
+                breakdownItems.appendChild(item);
+            });
+            
+            document.getElementById('add-services-total').innerText = total + ' ₽';
+            const breakdown = document.getElementById('add-services-breakdown');
+            const payment = document.getElementById('add-services-payment');
+            const formBtnText = document.getElementById('add-submit-btn-text');
+            
+            const btnProceed = document.getElementById('btn-proceed-to-pay');
+            
+            if (total > 0) {
+                if(btnProceed) btnProceed.classList.remove('hidden');
+                
+                // Set form action
+                if (currentTicketIdForServices) {
+                    document.getElementById('add-services-checkout-form').action = `/profile/ticket/${currentTicketIdForServices}/add_services/`;
+                    document.getElementById('checkout-dynamic-services').value = selectedServices.join(',');
+                }
+                
+                // Set button text based on method
+                const isCard = document.querySelector('input[name="add_payment_method"]:checked').value === 'card';
+                if (isCard) {
+                    formBtnText.innerHTML = `Оплатить ${total} ₽`;
+                }
+            } else {
+                if(btnProceed) btnProceed.classList.add('hidden');
+            }
+        };
+
+        window.toggleAddPaymentMethod = function(method) {
+            const cardFields = document.getElementById('add-card-fields');
+            const qrFields = document.getElementById('add-qr-fields');
+            const btnText = document.getElementById('add-submit-btn-text');
+            const cardInputs = cardFields.querySelectorAll('input');
+            const totalText = document.getElementById('add-services-total').innerText;
+            
+            if (method === 'card') {
+                cardFields.style.display = 'flex';
+                qrFields.style.display = 'none';
+                btnText.innerHTML = `Оплатить ${totalText}`;
+                cardInputs.forEach(input => input.setAttribute('required', 'required'));
+            } else {
+                cardFields.style.display = 'none';
+                qrFields.style.display = 'flex';
+                btnText.innerHTML = `Проверить оплату`;
+                cardInputs.forEach(input => input.removeAttribute('required'));
+            }
+        };
+
+        // Allow switching tab via URL hash
+        if (window.location.hash) {
+            const tabId = window.location.hash.substring(1);
+            if (document.getElementById('tab-' + tabId)) {
+                switchTab(tabId);
+            }
+        }
+    });
+
+    function openEditDocModal(id, type, num, date) {
+        document.getElementById('edit_doc_type_select').value = type;
+        document.getElementById('edit_doc_num_input').value = num;
+        document.getElementById('edit_issue_date').value = date;
+        document.getElementById('edit-doc-form').action = '/profile/doc/' + id + '/edit/';
+        document.getElementById('edit-doc-modal').classList.remove('hidden');
+    }
+
+    function openDeleteDocModal(id) {
+        document.getElementById('delete-doc-form').action = '/profile/doc/' + id + '/delete/';
+        document.getElementById('delete-doc-modal').classList.remove('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardNumber = document.getElementById('add-c-num-field');
+        const cardDate = document.getElementById('add-c-exp-field');
+        const cardCvv = document.getElementById('add-c-cvv-field');
+        const cardName = document.getElementById('add-c-name-field');
+
+        if(cardNumber) cardNumber.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) formattedValue += ' ';
+                formattedValue += value[i];
+            }
+            e.target.value = formattedValue;
+        });
+
+        if(cardDate) cardDate.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                let month = parseInt(value.substring(0, 2));
+                if (month > 12) value = '12' + value.substring(2);
+                if (month === 0) value = '01' + value.substring(2);
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+        
+        if(cardCvv) cardCvv.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 3);
+        });
+
+        if(cardName) cardName.addEventListener('input', function(e) {
+            this.setCustomValidity('');
+            this.value = this.value.toUpperCase().replace(/[^A-Z\s]/g, '');
+        });
+
+        const addServicesForm = document.getElementById('add-services-checkout-form');
+        if (addServicesForm) {
+            addServicesForm.addEventListener('submit', function(e) {
+                const isCard = document.querySelector('input[name="add_payment_method"]:checked').value === 'card';
+                if (isCard) {
+                    const cNum = document.getElementById('add-c-num-field');
+                    const cExp = document.getElementById('add-c-exp-field');
+                    const cCvv = document.getElementById('add-c-cvv-field');
+                    
+                    if (cNum.value.length !== 19) {
+                        e.preventDefault();
+                        cNum.setCustomValidity('Пожалуйста, введите корректный номер карты (16 цифр).');
+                        cNum.reportValidity();
+                        return;
+                    }
+                    if (cExp.value.length !== 5) {
+                        e.preventDefault();
+                        cExp.setCustomValidity('Пожалуйста, полностью введите срок действия карты (ММ/ГГ).');
+                        cExp.reportValidity();
+                        return;
+                    }
+                    if (cCvv.value.length !== 3) {
+                        e.preventDefault();
+                        cCvv.setCustomValidity('Пожалуйста, введите 3 цифры CVV-кода.');
+                        cCvv.reportValidity();
+                        return;
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

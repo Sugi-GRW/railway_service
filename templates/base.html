@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html class="light" lang="ru">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}RAILJET{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#1c1b1b",
+                        "outline-variant": "#c5c9ac",
+                        "surface-variant": "#e1e2e4",
+                        "tertiary-fixed-dim": "#c0c7d6",
+                        "outline": "#757a60",
+                        "on-tertiary-container": "#656c79",
+                        "inverse-on-surface": "#f0f1f3",
+                        "surface-tint": "#526600",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#aed500",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-primary-fixed-variant": "#3d4d00",
+                        "tertiary": "#585f6c",
+                        "primary-container": "#d1ff00",
+                        "error": "#ba1a1a",
+                        "background": "#f8f9fb",
+                        "tertiary-fixed": "#dce2f3",
+                        "surface-bright": "#f8f9fb",
+                        "surface": "#f8f9fb",
+                        "surface-dim": "#d9dadc",
+                        "on-tertiary-fixed-variant": "#404754",
+                        "tertiary-container": "#e7eefe",
+                        "secondary": "#5f5e5e",
+                        "inverse-surface": "#2e3132",
+                        "on-background": "#191c1e",
+                        "on-primary-container": "#5d7300",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-secondary-container": "#656464",
+                        "surface-container-high": "#e7e8ea",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#edeef0",
+                        "primary-fixed": "#c7f300",
+                        "on-surface-variant": "#444933",
+                        "on-surface": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#aed500",
+                        "primary": "#526600",
+                        "surface-container-low": "#f3f4f6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#151c27",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#474646",
+                        "secondary-container": "#e5e2e1",
+                        "surface-container-highest": "#e1e2e4",
+                        "on-primary-fixed": "#171e00"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "h1": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "h2": ["Inter"],
+                        "h3": ["Inter"],
+                        "label-bold": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dot-pattern-gradient {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px);
+            background-size: 24px 24px;
+            mask-image: radial-gradient(circle at 0% 0%, black, transparent 70%),
+                radial-gradient(circle at 100% 100%, black, transparent 70%);
+            -webkit-mask-image: radial-gradient(circle at 0% 0%, black, transparent 70%),
+                radial-gradient(circle at 100% 100%, black, transparent 70%);
+            mask-composite: add;
+            -webkit-mask-composite: source-over;
+        }
+
+        .dot-pattern {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+            mask-image: radial-gradient(circle at center, transparent 0%, black 100%);
+            -webkit-mask-image: radial-gradient(circle at center, transparent 0%, black 100%);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 6px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            width: 100%;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding: 0 12px;
+            flex: 1;
+        }
+
+        .icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background-color: #fcfebf;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 16px 0;
+            font-size: 16px;
+            color: #111827;
+            background-color: transparent;
+            border: none;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .search-input-wrapper input:focus,
+        .search-input-wrapper input:active,
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border-color: transparent !important;
+            --tw-ring-color: transparent !important;
+            --tw-ring-offset-shadow: 0 0 #0000 !important;
+            --tw-ring-shadow: 0 0 #0000 !important;
+        }
+
+        /* Override browser autofill styling */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+            -webkit-text-fill-color: #111827 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .divider {
+            width: 1px;
+            height: 48px;
+            background-color: #e5e7eb;
+        }
+
+        .btn-submit-search {
+            background-color: #bbd829;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 0 42px;
+            height: 52px;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .btn-submit-search:hover {
+            background-color: #a4c11e;
+        }
+
+        .swap-btn-container {
+            position: relative;
+            width: 0;
+            z-index: 20;
+        }
+
+        .swap-btn-mini {
+            position: absolute;
+            left: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f3f4f6;
+            border: 1px solid #ffffff;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #4b5563;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-['Inter'] antialiased">
+
+<!-- TopNavBar -->
+{% block navbar %}
+<nav class="bg-black text-sm font-medium tracking-tight docked full-width top-0 z-50 border-b border-zinc-800 shadow-[0px_4px_20px_rgba(0,0,0,0.05)]">
+    <div class="flex justify-between items-center px-8 h-20 w-full max-w-7xl mx-auto">
+        <a href="/" class="text-2xl font-black italic tracking-tighter text-white uppercase flex items-center gap-2">
+            RAILJET
+        </a>
+        <div class="hidden md:flex gap-8 items-center h-full">
+            <a class="{% if request.path == '/' %}text-white border-b-2 border-[#D1FF00]{% else %}text-zinc-400{% endif %} py-4 flex-col hover:text-[#D1FF00] transition-colors duration-200 active:scale-95 transition-transform" href="/">Поиск</a>
+            <a class="text-zinc-400 py-4 hover:text-[#D1FF00] transition-colors duration-200 active:scale-95 transition-transform" href="https://vk.com/arkadij_efimow" target="_blank">Поддержка</a>
+        </div>
+        <div>
+            {% if current_user %}
+                <a href="/profile/" class="text-white hover:text-[#D1FF00] mr-4">{{ current_user.login }}</a>
+                <a href="/logout/?next={{ request.path }}" class="text-zinc-400 hover:text-white">Выйти</a>
+            {% else %}
+                <a href="/login/?next={{ request.path }}" class="bg-primary-container text-on-primary-fixed px-6 py-2 rounded-full font-label-bold text-[12px] hover:bg-primary-fixed transition-colors active:scale-95 font-bold uppercase tracking-wide">Войти</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% endblock %}
+
+<!-- Footer -->
+<footer class="bg-zinc-50 dark:bg-zinc-900 text-xs font-bold uppercase tracking-widest full-width border-t border-t border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full max-w-7xl mx-auto gap-6 mt-auto">
+    <div class="text-lg font-black text-zinc-400 opacity-80 hover:opacity-100 transition-opacity">
+        RAILJET
+    </div>
+    <div class="flex gap-6 flex-wrap justify-center">
+        <a class="text-zinc-400 dark:text-zinc-500 hover:text-[#D1FF00] transition-colors opacity-80 hover:opacity-100 transition-opacity" href="/privacy/">Политика конфиденциальности</a>
+        <a class="text-zinc-400 dark:text-zinc-500 hover:text-[#D1FF00] transition-colors opacity-80 hover:opacity-100 transition-opacity" href="https://normativ.kontur.ru/document?moduleId=1&documentId=501803" target="_blank">Правила перевозок</a>
+    </div>
+    <div class="text-zinc-400 dark:text-zinc-500 text-center md:text-right opacity-80 hover:opacity-100 transition-opacity">
+        © 2026 RAILJET MODERN RAILWAYS. ВСЕ ПРАВА ЗАЩИЩЕНЫ.
+    </div>
+</footer>
+
+{% block extra_scripts %}
+{% endblock %}
+</body>
+</html>

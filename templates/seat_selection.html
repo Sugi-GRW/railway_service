@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Выбор места - {{ trip.train_num }}{% endblock %}
+
+{% block content %}
+<style>
+    footer {
+        display: none !important;
+    }
+
+    body {
+        overflow: hidden;
+        height: 100vh;
+        background-color: #f8f9fb;
+    }
+
+    main {
+        height: calc(100vh - 140px);
+        overflow-y: auto;
+        background-color: #f8f9fb;
+    }
+
+    /* Seat Compartment Colors - More Vivid Versions */
+    .comp-male {
+        background-color: #d1ecff !important;
+        border-color: #4ea8ff !important;
+    }
+
+    .comp-female {
+        background-color: #ffdceb !important;
+        border-color: #ff69b4 !important;
+    }
+
+    .comp-pets {
+        background-color: #ffe8cc !important;
+        border-color: #ff922b !important;
+    }
+</style>
+
+<!-- Black Header Wrapper -->
+<div class="bg-black relative overflow-hidden flex-shrink-0">
+    <div class="absolute inset-0 dot-pattern opacity-80 pointer-events-none"></div>
+
+
+    <!-- Header Section -->
+    <section class="relative z-10 text-white py-6 px-6">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <p class="text-[11px] font-semibold tracking-wide text-[#D1FF00] mb-1 uppercase">ВЫБОР МЕСТА</p>
+                <h1 class="text-3xl font-bold tracking-tight">Выберите место</h1>
+                <p class="text-[14px] text-zinc-400 mt-1">Поезд {{ trip.train_num }} • Отправление: {{ trip.departure_time|date:"d.m.Y H:i" }}</p>
+            </div>
+            <div class="flex items-center gap-4">
+
+                <div
+                    class="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-xl p-3 flex items-center gap-6 shadow-lg">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-white border border-zinc-700"></div>
+                        <span class="text-[14px] text-zinc-300">Свободно</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div
+                            class="w-3 h-3 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[8px] font-bold text-zinc-500">
+                            X</div>
+                        <span class="text-[14px] text-zinc-300">Занято</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-[#D1FF00]"></div>
+                        <span class="text-[14px] text-zinc-300">Выбрано</span>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-xl p-3 flex items-center gap-6 shadow-lg">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-[#4ea8ff] shadow-[0_0_8px_rgba(78,168,255,0.6)]"></div>
+                        <span class="text-[14px] text-zinc-100 font-medium">Мужское</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-[#ff69b4] shadow-[0_0_8px_rgba(255,105,180,0.6)]"></div>
+                        <span class="text-[14px] text-zinc-100 font-medium">Женское</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-[#ff922b] shadow-[0_0_8px_rgba(255,146,43,0.6)]"></div>
+                        <span class="text-[14px] text-zinc-100 font-medium">С животными</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full px-4 md:px-6 py-6 flex flex-col items-center pb-24 h-full">
+    <!-- Carriage Layout Card -->
+    <div id="layout-grid-card"
+        class="bg-surface-container-lowest rounded-xl border border-surface-container-highest shadow-sm p-6 overflow-hidden py-4 w-full flex justify-center shrink-0">
+
+        <div class="flex items-stretch gap-6 min-w-[700px] w-full">
+            <!-- Entrance & Toilet Area (Left Side) -->
+            <div class="flex flex-col justify-between w-24 shrink-0 py-1 h-full min-h-[220px]">
+                <div class="flex items-center justify-center pt-2">
+                    <span class="material-symbols-outlined text-secondary text-2xl">sensor_door</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 pb-2">
+                    <span class="material-symbols-outlined text-secondary text-2xl">wc</span>
+                    <span class="text-[10px] text-secondary font-bold uppercase tracking-tighter">Туалет</span>
+                </div>
+            </div>
+
+            <!-- Seat Layout Grid Wrapper -->
+            <div id="seat-grid-wrapper" class="flex-grow flex flex-col justify-center py-2 min-h-[220px]">
+            </div>
+        </div>
+    </div>
+
+    <!-- Coach Selection Blocks centered using auto-margins -->
+    <div class="flex flex-wrap gap-4 justify-center my-auto shrink-0" id="wagon-container">
+        {% for wagon in wagons %}
+        <div class="wagon-card border {% if forloop.first %}bg-primary-container/20 border-[#D1FF00] border-2{% else %}bg-surface-container-lowest border-surface-container-highest{% endif %} rounded-xl px-4 py-3 flex items-center gap-2 shadow-sm cursor-pointer hover:shadow-md transition-all"
+            data-class="{{ wagon.class_field.class_name|default:'' }}" data-wagon="{{ wagon.wagon_num }}">
+            <div class="flex flex-col pr-4">
+                <span
+                    class="wagon-title text-[12px] font-bold {% if forloop.first %}text-[#526600]{% else %}text-on-surface{% endif %}">Вагон
+                    {{ wagon.wagon_num }}</span>
+                <span class="text-[10px] font-semibold tracking-wide text-secondary mt-0.5 uppercase">{{ wagon.class_field.class_name|default:'Неизвестно' }}</span>
+            </div>
+            <div class="text-[18px] font-bold"></div>
+        </div>
+        {% endfor %}
+    </div>
+</main>
+
+<!-- Horizontal Trip Summary Bottom Bar -->
+<div
+    class="bg-surface-container-lowest border-t border-surface-container-highest shadow-[0_-8px_15px_-3px_rgba(0,0,0,0.05)] py-4 px-6 fixed bottom-0 w-full z-50 min-h-[96px] flex items-center">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 w-full">
+        <div class="flex flex-wrap items-center gap-6 md:gap-12 w-full md:w-auto justify-between md:justify-start">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="toggleNotification()"
+                title="Отслеживать вагон">
+                <span
+                    class="material-symbols-outlined text-3xl text-zinc-400 hover:text-primary transition-colors select-none"
+                    id="bell-icon">notifications</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-[14px] text-secondary">Вагон</span>
+                <span class="text-[12px] font-bold" id="summary-wagon">1</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-[14px] text-secondary">Место</span>
+                <span
+                    class="text-[12px] font-bold bg-[#D1FF00] text-on-primary-fixed px-2 py-0.5 rounded border border-[#bce600] w-fit mt-0.5"
+                    id="summary-seat">-</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-[14px] text-secondary">Расположение</span>
+                <span class="text-[12px] font-bold" id="summary-seat-type">-</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-[14px] text-secondary">Тип места</span>
+                <span class="text-[12px] font-bold" id="summary-seat-type-id">-</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-[14px] text-secondary">Класс</span>
+                <span class="text-[12px] font-bold" id="summary-class">Эконом</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end" id="price-container"
+            style="display: none;">
+
+
+            <!-- Auto-upgrade toggle -->
+            {% if can_auto_upgrade %}
+            <label id="auto-upgrade-label" for="auto-upgrade-check"
+                class="flex items-center gap-3 cursor-pointer px-3 py-2 rounded-xl transition-all duration-200 hover:bg-white/5 group">
+                <div class="relative shrink-0">
+                    <input type="checkbox" id="auto-upgrade-check" class="sr-only peer" onchange="toggleAutoUpgrade()">
+                    <div
+                        class="w-5 h-5 rounded-md border-2 border-surface-variant bg-surface-container peer-checked:border-[#D1FF00] peer-checked:bg-[#D1FF00] transition-all duration-150 flex items-center justify-center">
+                        <svg id="upgrade-check-icon" class="w-3 h-3 text-black hidden" viewBox="0 0 12 10" fill="none">
+                            <path d="M1 5l3.5 3.5L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[12px] font-semibold text-on-surface leading-tight"
+                        id="upgrade-label-text">Автоапгрейд <span
+                            class="text-[11px] text-secondary font-normal">+10%</span></span>
+                    <span class="text-[10px] text-secondary" id="upgrade-label-sub">Повышение класса при наличии
+                        мест</span>
+                </div>
+            </label>
+            {% endif %}
+
+
+            <div class="flex flex-col items-end justify-center min-h-[56px]">
+                <span class="text-[14px] text-secondary leading-none">Итого</span>
+                <span class="text-[24px] font-bold leading-tight" id="summary-price">0 ₽</span>
+                <span class="text-[11px] text-zinc-500 invisible block" id="upgrade-price-breakdown">&nbsp;</span>
+            </div>
+            <form id="checkout-form" method="GET" action="{% url 'checkout' trip.id %}">
+                <input type="hidden" name="wagon" id="input-wagon" value="">
+                <input type="hidden" name="seat" id="input-seat" value="">
+                <input type="hidden" id="input-price" value="">
+                <input type="hidden" name="extra_services" id="input-extra-services" value="">
+                <input type="hidden" name="from_station" value="{{ from_station_id }}">
+                <input type="hidden" name="to_station" value="{{ to_station_id }}">
+                <input type="hidden" name="auto_upgrade" id="input-auto-upgrade" value="false">
+                <button type="button" id="btn-next" onclick="openExtraServicesModal()"
+                    class="bg-[#D1FF00] text-on-primary-fixed text-[12px] font-bold uppercase tracking-wide px-8 py-3 rounded-lg hover:bg-[#bce600] transition-colors shadow-sm whitespace-nowrap opacity-50 cursor-not-allowed"
+                    disabled>
+                    Дальше
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Extra Services Modal -->
+<div id="extra-services-modal" style="display: none;"
+    class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+    <div
+        class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-6 md:p-8 w-full max-w-md relative max-h-[90vh] flex flex-col">
+        <button onclick="closeExtraServicesModal()"
+            class="absolute top-6 right-6 md:top-8 md:right-8 text-zinc-400 hover:text-on-surface transition-colors z-10 bg-surface-container-lowest rounded-full">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <div class="shrink-0 pr-8">
+            <h3 class="text-xl font-bold text-on-surface mb-2">Дополнительные услуги</h3>
+            <p class="text-xs text-on-surface-variant mb-6">Выберите услуги, которые сделают вашу поездку комфортнее.
+            </p>
+        </div>
+
+        <style>
+            .elegant-scrollbar::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .elegant-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .elegant-scrollbar::-webkit-scrollbar-thumb {
+                background-color: #d4d4d8;
+                border-radius: 10px;
+            }
+
+            .elegant-scrollbar::-webkit-scrollbar-thumb:hover {
+                background-color: #a1a1aa;
+            }
+        </style>
+
+        <div class="flex flex-col gap-4 mb-6 overflow-y-auto pr-3 elegant-scrollbar">
+            {% for service in extra_services %}
+            <label
+                class="flex items-start gap-3 p-4 border border-surface-variant rounded-xl hover:bg-surface-container-lowest transition-colors cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 shrink-0">
+                <input type="checkbox" name="service_chk" value="{{ service.id }}" data-price="{{ service.price }}"
+                    class="mt-1 w-4 h-4 text-primary bg-surface border-surface-variant rounded focus:ring-primary focus:ring-2 accent-primary">
+                <div class="flex flex-col flex-grow">
+                    <span class="text-sm font-bold text-on-surface">{{ service.service_name }}</span>
+                    <span class="text-[11px] text-on-surface-variant mt-1">{{ service.description }}</span>
+                </div>
+                <div class="shrink-0 font-bold text-sm text-primary">
+                    {{ service.price }} ₽
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="flex items-center justify-end pt-4 border-t border-surface-variant shrink-0 mt-auto">
+            <button type="button" onclick="submitCheckoutForm()"
+                class="bg-[#D1FF00] text-on-primary-fixed text-[12px] font-bold uppercase tracking-wide px-8 py-3 rounded-lg hover:bg-[#bce600] transition-colors shadow-sm w-full text-center">
+                Перейти к оплате
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Gender Alert Modal -->
+<div id="gender-alert-modal" style="display: none;"
+    class="fixed inset-0 z-[110] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+    <div
+        class="bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-2xl p-6 md:p-8 w-full max-w-sm relative text-center">
+        <button onclick="closeGenderAlert()"
+            class="absolute top-4 right-4 text-zinc-400 hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <span class="material-symbols-outlined text-5xl text-error mb-4">error</span>
+        <h3 class="text-xl font-bold text-on-surface mb-2">Внимание</h3>
+        <p id="gender-alert-text" class="text-sm text-on-surface-variant mb-6"></p>
+        <button type="button" onclick="closeGenderAlert()"
+            class="bg-error text-white text-[12px] font-bold uppercase tracking-wide px-6 py-3 rounded-lg hover:bg-error/90 transition-colors shadow-sm w-full">
+            Понятно
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let currentWagon = null;
+    let trackedWagons = [];
+    let wagonPrices = {};
+    let bookedSeats = {};
+    let userGender = "";
+    let wagonClassIds = {};
+    let maxClassId = {{ max_class_id|default:'null' }};
+    let layoutGrid, cards, seatGridWrapper;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        layoutGrid = document.getElementById('layout-grid-card');
+        cards = document.querySelectorAll('.wagon-card');
+        bookedSeats = {{ booked_seats_json | safe }};
+    wagonPrices = {{ wagon_prices_json | safe }};
+    wagonClassIds = {{ wagon_class_ids_json | safe }};
+    userGender = "{{ user_gender|default:'' }}";
+    trackedWagons = {{ tracked_wagons_json | safe }};
+    seatGridWrapper = document.getElementById('seat-grid-wrapper');
+
+    function generateSeatHtml(seatId, booked, extraClass = "") {
+        let isBooked = booked.includes(seatId);
+        if (isBooked) {
+            return `<div class="w-9 h-9 bg-surface-container-highest rounded flex items-center justify-center text-xs font-bold text-zinc-400 cursor-not-allowed ${extraClass}">X</div>`;
+        } else {
+            return `<div class="w-9 h-9 bg-white border border-surface-variant rounded flex items-center justify-center text-xs font-bold hover:shadow-md transition-shadow cursor-pointer ${extraClass}" data-seat="${seatId}" onclick="selectSeat(${seatId})">${seatId}</div>`;
+        }
+    }
+
+    function getSeatTypeInfo(className, seatId) {
+        if (className === 'Плацкарт') {
+            let rem = seatId % 6;
+            let isSide = (rem === 5 || rem === 0);
+            let isUpper = (seatId % 2 === 0);
+            let prefix = isSide ? "Боковое " : "";
+            let suffix = isUpper ? "Верхнее" : "Нижнее";
+            let typeName = (seatId >= 49) ? "С животными" : "Стандартное";
+            return { name: prefix + suffix, type: typeName };
+        }
+        if (className === 'Купе') {
+            let isUpper = (seatId % 2 === 0);
+            let type = isUpper ? "Верхнее" : "Нижнее";
+            if (seatId >= 33) return { name: type, type: "С животными" };
+            if (seatId >= 9 && seatId <= 12) return { name: type, type: "Мужское" };
+            if (seatId >= 13 && seatId <= 16) return { name: type, type: "Женское" };
+            return { name: type, type: "Стандартное" };
+        }
+        if (className === 'СВ') {
+            let typeName = (seatId >= 17) ? "С животными" : "Стандартное";
+            return { name: "Нижнее", type: typeName };
+        }
+        if (className === 'Сидячий' || className === 'Первый') {
+            return { name: "Сидячие", type: "Стандартное" };
+        }
+        return { name: "Стандартное", type: "Стандартное" };
+    }
+
+    function renderSeats(wagonNum, className) {
+        const booked = bookedSeats[wagonNum] || [];
+        let html = '';
+
+        if (className === 'Купе') {
+            html += `<div class="h-[84px] w-full"></div>`;
+            html += `<div class="h-8 w-full border-y border-dashed border-surface-variant my-4 flex items-center justify-center text-[10px] text-zinc-400 uppercase tracking-widest">Проход</div>`;
+            html += `<div class="flex gap-2 w-full">`;
+            for (let comp = 0; comp < 9; comp++) {
+                let base = comp * 4;
+                let compClass = "";
+                if (base + 1 >= 9 && base + 1 <= 12) compClass = "comp-male";
+                else if (base + 1 >= 13 && base + 1 <= 16) compClass = "comp-female";
+                else if (base + 1 >= 33) compClass = "comp-pets";
+
+                html += `<div class="border-2 border-surface-variant rounded flex flex-col justify-between p-1 h-[84px] ${compClass || 'bg-surface-container-lowest'} flex-1 min-w-[50px]">`;
+                html += `<div class="flex justify-between gap-1">` + generateSeatHtml(base + 2, booked) + generateSeatHtml(base + 4, booked) + `</div>`;
+                html += `<div class="flex justify-between gap-1">` + generateSeatHtml(base + 1, booked) + generateSeatHtml(base + 3, booked) + `</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+        else if (className === 'Плацкарт') {
+            html += `<div class="flex gap-2 w-full">`;
+            for (let comp = 0; comp < 9; comp++) {
+                let base = comp * 6;
+                let compClass = (base + 5 >= 49) ? "comp-pets" : "";
+                html += `<div class="border-2 border-surface-variant rounded flex items-center justify-between p-1 ${compClass || 'bg-surface-container-lowest'} flex-1 min-w-[50px] h-[84px]">`;
+                html += generateSeatHtml(base + 5, booked) + generateSeatHtml(base + 6, booked);
+                html += `</div>`;
+            }
+            html += `</div>`;
+
+            html += `<div class="h-8 w-full border-y border-dashed border-surface-variant my-4 flex items-center justify-center text-[10px] text-zinc-400 uppercase tracking-widest">Проход</div>`;
+
+            html += `<div class="flex gap-2 w-full">`;
+            for (let comp = 0; comp < 9; comp++) {
+                let base = comp * 6;
+                let compClass = (base + 1 >= 49) ? "comp-pets" : "";
+                html += `<div class="border-2 border-surface-variant rounded flex flex-col justify-between p-1 h-[84px] ${compClass || 'bg-surface-container-lowest'} flex-1 min-w-[50px]">`;
+                html += `<div class="flex justify-between">` + generateSeatHtml(base + 2, booked) + generateSeatHtml(base + 4, booked) + `</div>`;
+                html += `<div class="flex justify-between">` + generateSeatHtml(base + 1, booked) + generateSeatHtml(base + 3, booked) + `</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+        else if (className === 'СВ') {
+            html += `<div class="h-[84px] w-full"></div>`;
+            html += `<div class="h-8 w-full border-y border-dashed border-surface-variant my-4 flex items-center justify-center text-[10px] text-zinc-400 uppercase tracking-widest">Проход</div>`;
+            html += `<div class="flex gap-2 w-full h-[84px]">`;
+            for (let comp = 0; comp < 9; comp++) {
+                let base = comp * 2;
+                let compClass = (base + 1 >= 17) ? "comp-pets" : "";
+                html += `<div class="border-2 border-surface-variant rounded flex flex-col justify-end p-1 ${compClass || 'bg-surface-container-lowest'} flex-1 min-w-[50px]">`;
+                html += `<div class="flex justify-between gap-1">` + generateSeatHtml(base + 1, booked) + generateSeatHtml(base + 2, booked) + `</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+        else if (className === 'Бизнес' || className === 'Первый') {
+            html += `<div class="flex justify-between items-center w-full h-[84px] px-8 md:px-16">`;
+            for (let i = 1; i <= 4; i++) { html += generateSeatHtml(i, booked, "w-12 h-12 text-lg"); }
+            html += `</div>`;
+            html += `<div class="h-8 w-full border-y border-dashed border-surface-variant my-4 flex items-center justify-center text-[10px] text-zinc-400 uppercase tracking-widest">Проход</div>`;
+            html += `<div class="flex justify-between items-center w-full h-[84px] px-8 md:px-16">`;
+            for (let i = 5; i <= 8; i++) { html += generateSeatHtml(i, booked, "w-12 h-12 text-lg"); }
+            html += `</div>`;
+        }
+        else {
+            // Сидячий - Без рамок вокруг блоков
+            html += `<div class="flex gap-2 w-full">`;
+            for (let col = 1; col <= 10; col++) {
+                let base = (col - 1) * 4;
+                html += `<div class="flex flex-col items-center gap-1 p-1 flex-1 h-[84px] justify-center">`;
+                html += generateSeatHtml(base + 1, booked) + generateSeatHtml(base + 2, booked);
+                html += `</div>`;
+            }
+            html += `</div>`;
+
+            html += `<div class="h-8 w-full border-y border-dashed border-surface-variant my-4 flex items-center justify-center text-[10px] text-zinc-400 uppercase tracking-widest">Проход</div>`;
+
+            html += `<div class="flex gap-2 w-full">`;
+            for (let col = 1; col <= 10; col++) {
+                let base = (col - 1) * 4;
+                html += `<div class="flex flex-col items-center gap-1 p-1 flex-1 h-[84px] justify-center">`;
+                html += generateSeatHtml(base + 3, booked) + generateSeatHtml(base + 4, booked);
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+
+        seatGridWrapper.innerHTML = html;
+    }
+
+    window.selectSeat = function (seatId) {
+        let el = document.querySelector(`[data-seat="${seatId}"]`);
+        if (!el) return;
+
+        // Если место уже выбрано, снимаем выделение
+        if (el.className.includes('bg-[#D1FF00]')) {
+            let baseClass = el.className.replace('bg-[#D1FF00]', 'bg-white').replace('text-on-primary-fixed', '').replace('shadow-sm', '').replace('border-[#bce600]', 'border-surface-variant');
+            el.className = baseClass;
+            document.getElementById('summary-seat').innerText = '-';
+            document.getElementById('summary-seat-type').innerText = '-';
+            document.getElementById('summary-seat-type-id').innerText = '-';
+            document.getElementById('price-container').style.display = 'none';
+
+            document.getElementById('input-wagon').value = '';
+            document.getElementById('input-seat').value = '';
+            document.getElementById('input-price').value = '';
+            let btnN = document.getElementById('btn-next');
+            if (btnN) { btnN.disabled = true; btnN.classList.add('opacity-50', 'cursor-not-allowed'); }
+
+            return;
+        }
+
+        // Иначе снимаем выделение со всех остальных и выбираем текущее
+        document.querySelectorAll('[data-seat]').forEach(otherEl => {
+            let baseClass = otherEl.className.replace('bg-[#D1FF00]', 'bg-white').replace('text-on-primary-fixed', '').replace('shadow-sm', '').replace('border-[#bce600]', 'border-surface-variant');
+            otherEl.className = baseClass;
+        });
+
+        let activeClass = el.className.replace('bg-white', 'bg-[#D1FF00]').replace('border-surface-variant', 'border-[#bce600]') + ' text-on-primary-fixed shadow-sm';
+        el.className = activeClass;
+
+        // Получаем класс вагона
+        let className = document.getElementById('summary-class').innerText;
+        let typeInfo = getSeatTypeInfo(className, seatId);
+        document.getElementById('summary-seat').innerText = seatId;
+        document.getElementById('summary-seat-type').innerText = typeInfo.name;
+        document.getElementById('summary-seat-type-id').innerText = typeInfo.type;
+
+        let basePrice = wagonPrices[currentWagon] || 0;
+        let isUpgrade = false;
+        let totalPrice = isUpgrade ? Math.round(basePrice * 1.1) : basePrice;
+        document.getElementById('summary-price').innerText = totalPrice.toLocaleString('ru-RU') + ' ₽';
+        if (isUpgrade) {
+            document.getElementById('upgrade-price-breakdown').textContent = basePrice.toLocaleString('ru-RU') + ' + ' + Math.round(basePrice * 0.1).toLocaleString('ru-RU') + ' ₽ (апгрейд)';
+            document.getElementById('upgrade-price-breakdown').classList.remove('invisible');
+        } else {
+            document.getElementById('upgrade-price-breakdown').classList.add('invisible');
+            document.getElementById('upgrade-price-breakdown').innerHTML = '&nbsp;';
+        }
+        document.getElementById('price-container').style.display = 'flex';
+
+        document.getElementById('input-wagon').value = currentWagon;
+        document.getElementById('input-seat').value = seatId;
+        document.getElementById('input-price').value = totalPrice;
+        let btn = document.getElementById('btn-next');
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    };
+
+    window.openExtraServicesModal = function () {
+        let typeId = document.getElementById('summary-seat-type-id').innerText;
+        if (userGender) {
+            let isMale = userGender.toUpperCase().startsWith("М") || userGender.toUpperCase().startsWith("M");
+            let isFemale = userGender.toUpperCase().startsWith("Ж") || userGender.toUpperCase().startsWith("F");
+
+            if (typeId === "Мужское" && isFemale) {
+                document.getElementById('gender-alert-text').innerText = "Это место находится в мужском купе. Выбор недоступен для пассажиров женского пола.";
+                document.getElementById('gender-alert-modal').style.display = 'flex';
+                return;
+            }
+            if (typeId === "Женское" && isMale) {
+                document.getElementById('gender-alert-text').innerText = "Это место находится в женском купе. Выбор недоступен для пассажиров мужского пола.";
+                document.getElementById('gender-alert-modal').style.display = 'flex';
+                return;
+            }
+        }
+        document.getElementById('extra-services-modal').style.display = 'flex';
+    };
+
+    window.closeGenderAlert = function () {
+        document.getElementById('gender-alert-modal').style.display = 'none';
+    };
+
+    window.closeExtraServicesModal = function () {
+        document.getElementById('extra-services-modal').style.display = 'none';
+    };
+
+    window.submitCheckoutForm = function () {
+        // Собираем выбранные дополнительные услуги
+        const selectedServices = [];
+        document.querySelectorAll('input[name="service_chk"]:checked').forEach(chk => {
+            selectedServices.push(chk.value);
+        });
+        document.getElementById('input-extra-services').value = selectedServices.join(',');
+        document.getElementById('checkout-form').submit();
+    };
+
+
+    window.toggleAutoUpgrade = function () {
+        const checkbox = document.getElementById('auto-upgrade-check');
+        if (!checkbox || checkbox.disabled) return;
+        const icon = document.getElementById('upgrade-check-icon');
+        const isActive = checkbox.checked;
+        if (isActive) {
+            icon.classList.remove('hidden');
+            document.getElementById('input-auto-upgrade').value = 'true';
+        } else {
+            icon.classList.add('hidden');
+            document.getElementById('input-auto-upgrade').value = 'false';
+        }
+        const selectedSeat = document.getElementById('input-seat').value;
+        if (selectedSeat) {
+            const basePrice = wagonPrices[currentWagon] || 0;
+            const totalPrice = isActive ? Math.round(basePrice * 1.1) : basePrice;
+            document.getElementById('summary-price').innerText = totalPrice.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('input-price').value = totalPrice;
+            if (isActive) {
+                document.getElementById('upgrade-price-breakdown').textContent = basePrice.toLocaleString('ru-RU') + ' + ' + Math.round(basePrice * 0.1).toLocaleString('ru-RU') + ' ₽ (апгрейд)';
+                document.getElementById('upgrade-price-breakdown').classList.remove('invisible');
+            } else {
+                document.getElementById('upgrade-price-breakdown').classList.add('invisible');
+                document.getElementById('upgrade-price-breakdown').innerHTML = '&nbsp;';
+            }
+        }
+    };
+
+    function updateLayout(className, wagonNum) {
+        currentWagon = wagonNum;
+        document.getElementById('summary-class').innerText = className || 'Неизвестно';
+        document.getElementById('summary-wagon').innerText = wagonNum;
+        document.getElementById('input-wagon').value = wagonNum;
+
+        // Включение/отключение чекбокса автоапгрейда в зависимости от того, максимальный ли это класс
+        const checkbox = document.getElementById('auto-upgrade-check');
+        const upgradeLabel = document.getElementById('auto-upgrade-label');
+        const sub = document.getElementById('upgrade-label-sub');
+        const currentClassId = wagonClassIds[wagonNum];
+        const isTopClass = (maxClassId !== null && currentClassId === maxClassId);
+
+        if (checkbox && upgradeLabel && sub) {
+            if (isTopClass) {
+                checkbox.checked = false;
+                checkbox.disabled = true;
+                document.getElementById('input-auto-upgrade').value = 'false';
+                document.getElementById('upgrade-check-icon').classList.add('hidden');
+                upgradeLabel.classList.add('hidden');
+            } else {
+                checkbox.disabled = false;
+                upgradeLabel.classList.remove('hidden');
+                sub.textContent = 'Повышение класса при наличии мест';
+            }
+        }
+
+        let bellIcon = document.getElementById('bell-icon');
+        if (trackedWagons.includes(wagonNum)) {
+            bellIcon.classList.add('notifications_active', 'text-primary');
+            bellIcon.classList.remove('notifications', 'text-zinc-400');
+            bellIcon.innerText = 'notifications_active';
+        } else {
+            bellIcon.classList.remove('notifications_active', 'text-primary');
+            bellIcon.classList.add('notifications', 'text-zinc-400');
+            bellIcon.innerText = 'notifications';
+        }
+
+        cards.forEach(card => {
+            if (parseInt(card.dataset.wagon) === wagonNum) {
+                card.classList.add('border-primary', 'bg-primary/5');
+            } else {
+                card.classList.remove('border-primary', 'bg-primary/5');
+            }
+        });
+
+        document.getElementById('summary-seat').innerText = '-';
+        document.getElementById('summary-seat-type').innerText = '-';
+        document.getElementById('summary-seat-type-id').innerText = '-';
+        document.getElementById('price-container').style.display = 'none';
+
+        document.getElementById('input-seat').value = '';
+        document.getElementById('input-price').value = '';
+        let btn = document.getElementById('btn-next');
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        layoutGrid.style.display = 'block';
+        renderSeats(wagonNum, className);
+    }
+
+    // Начальное состояние (при загрузке страницы)
+    if (cards.length > 0) {
+        updateLayout(cards[0].dataset.class, parseInt(cards[0].dataset.wagon));
+    }
+
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            cards.forEach(c => {
+                c.classList.remove('border-[#D1FF00]', 'border-2', 'bg-primary-container/20');
+                c.classList.add('border-surface-container-highest', 'bg-surface-container-lowest');
+                c.querySelector('.wagon-title').classList.remove('text-[#526600]');
+                c.querySelector('.wagon-title').classList.add('text-on-surface');
+            });
+
+            card.classList.add('border-[#D1FF00]', 'border-2', 'bg-primary-container/20');
+            card.classList.remove('border-surface-container-highest', 'bg-surface-container-lowest');
+            card.querySelector('.wagon-title').classList.remove('text-on-surface');
+            card.querySelector('.wagon-title').classList.add('text-[#526600]');
+
+            updateLayout(card.getAttribute('data-class'), parseInt(card.getAttribute('data-wagon')));
+        });
+    });
+    });
+
+    window.toggleNotification = function () {
+        if (!currentWagon) return;
+
+        const csrfToken = '{{ csrf_token }}';
+
+        fetch(`/profile/notification/toggle/{{ trip.id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                wagon_num: currentWagon,
+                from_station_id: "{{ from_station_id }}",
+                to_station_id: "{{ to_station_id }}"
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let bellIcon = document.getElementById('bell-icon');
+                    if (data.state === 'added') {
+                        trackedWagons.push(currentWagon);
+                        bellIcon.classList.add('notifications_active', 'text-primary');
+                        bellIcon.classList.remove('notifications', 'text-zinc-400');
+                        bellIcon.innerText = 'notifications_active';
+                    } else if (data.state === 'removed') {
+                        trackedWagons = trackedWagons.filter(w => w !== currentWagon);
+                        bellIcon.classList.remove('notifications_active', 'text-primary');
+                        bellIcon.classList.add('notifications', 'text-zinc-400');
+                        bellIcon.innerText = 'notifications';
+                    }
+                } else {
+                    if (data.error === 'Not authenticated') {
+                        window.location.href = '{% url "login" %}';
+                    } else {
+                        alert('Ошибка: ' + data.error);
+                    }
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Произошла ошибка при отправке запроса.');
+            });
+    }
+</script>
+{% endblock %}

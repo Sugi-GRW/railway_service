@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оплата билета - {{ trip.train_num }}{% endblock %}
+
+{% block content %}
+<main class="flex-grow w-full px-4 md:px-6 py-10 flex flex-col items-center bg-[#f8f9fb]">
+    <div class="max-w-3xl w-full flex flex-col gap-6">
+        
+        <h1 class="text-3xl font-black tracking-tighter text-center uppercase mb-2">Оформление заказа</h1>
+
+        <!-- 1. ДАННЫЕ ПАССАЖИРА -->
+        <div class="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm">
+            <h2 class="text-lg font-black mb-6 flex items-center gap-2 uppercase tracking-tight text-zinc-800">
+                <span class="material-symbols-outlined text-primary">account_circle</span>
+                Данные пассажира
+            </h2>
+            
+            <div class="flex flex-col md:flex-row gap-0 md:divide-x md:divide-zinc-100">
+                <!-- Left Column: Personal info -->
+                <div class="flex-1 md:pr-8 pb-6 md:pb-0 flex flex-col gap-6">
+                    <div>
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">ФИО Пассажира</span>
+                        <span class="text-sm font-black uppercase">{{ user.fio }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Пол</span>
+                        <span class="text-sm font-black">{{ user.gender|default:"Мужской" }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Дата рождения</span>
+                        <span class="text-sm font-black">{{ user.birth_date|date:"d.m.Y"|default:"12.04.1995" }}</span>
+                    </div>
+                </div>
+
+                <!-- Right Column: Document info -->
+                <div class="flex-1 md:pl-8 pt-6 md:pt-0 flex flex-col gap-6">
+                    <div>
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Тип документа</span>
+                        <span class="text-sm font-black uppercase">{{ user_doc.doc_type|default:"Паспорт РФ" }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Номер документа</span>
+                        <span class="text-sm font-black">{{ user_doc.doc_num|default:"4512 098765" }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Дата выдачи</span>
+                        <span class="text-sm font-black">{{ user_doc.issue_date|date:"d.m.Y"|default:"10.10.2015" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ДЕТАЛИ ПОЕЗДКИ -->
+        <div class="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm">
+            <h2 class="text-lg font-black mb-6 flex items-center gap-2 uppercase tracking-tight text-zinc-800">
+                <span class="material-symbols-outlined text-primary">train</span>
+                Детали рейса
+            </h2>
+            
+            <div class="flex flex-col md:flex-row gap-0 md:divide-x md:divide-zinc-100">
+                <!-- Left: Train, Route & Departure -->
+                <div class="flex-1 md:pr-8 pb-6 md:pb-0 flex flex-col justify-center">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Номер поезда</span>
+                        <span class="font-black">{{ trip.train_num }}</span>
+                    </div>
+
+                    <div class="flex flex-col gap-1 mb-6">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Маршрут</span>
+                        <div class="flex items-center justify-between mt-1 px-2">
+                            <span class="font-black text-sm uppercase tracking-tight">{{ start_station }}</span>
+                            <span class="material-symbols-outlined text-zinc-400 text-lg mx-4">arrow_forward</span>
+                            <span class="font-black text-sm uppercase tracking-tight">{{ end_station }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-0 relative">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Отправление</span>
+                            <span class="text-xl font-black block leading-none">{{ trip.departure_time|date:"H:i" }}</span>
+                            <span class="text-xs text-zinc-500 font-bold">{{ trip.departure_time|date:"d.m.Y" }}</span>
+                            <span class="text-[9px] font-bold text-primary uppercase block mt-1">Путь {{ dep_track }}</span>
+                        </div>
+                        
+                        <!-- Arrow exactly between times -->
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-zinc-300">
+                             <span class="material-symbols-outlined text-sm">trending_flat</span>
+                        </div>
+
+                        <div class="flex flex-col text-right">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">Прибытие</span>
+                            <span class="text-xl font-black block leading-none">{% if arrival_dt %}{{ arrival_dt|date:"H:i" }}{% else %}--:--{% endif %}</span>
+                            <span class="text-xs text-zinc-500 font-bold">{% if arrival_dt %}{{ arrival_dt|date:"d.m.Y" }}{% else %}--.--.----{% endif %}</span>
+                            <span class="text-[9px] font-bold text-primary uppercase block mt-1">Путь {{ arr_track }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Wagon & Seat -->
+                <div class="flex-1 md:pl-8 pt-6 md:pt-0">
+                    <div class="flex flex-col gap-4 h-full">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Номер вагона</span>
+                            <span class="font-black">{{ wagon }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-y border-zinc-50 my-1">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Класс вагона</span>
+                            <span class="font-black uppercase text-sm">{{ wagon_class }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Место</span>
+                            <span class="text-xl font-black">{{ seat }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 text-zinc-400">Расположение</span>
+                            <span class="font-black text-sm uppercase text-zinc-700">{{ seat_pos }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 text-zinc-400">Тип места</span>
+                            <span class="font-black text-sm uppercase text-zinc-700">{{ seat_type }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. РАСЧЕТ -->
+        <div class="bg-surface border border-surface-variant rounded-2xl p-5 shadow-sm" id="checkout-breakdown">
+            <h2 class="text-lg font-black flex items-center gap-2 mb-6 uppercase tracking-tight text-on-surface">
+                <span class="material-symbols-outlined text-primary text-[18px]">receipt_long</span>
+                Расчет стоимости
+            </h2>
+            
+            <div class="flex flex-col gap-3 text-sm" id="breakdown-items">
+                <div class="flex justify-between items-center py-1">
+                    <span class="font-medium text-zinc-600">Оформление билета</span>
+                    <span class="font-bold text-on-surface">{{ base_price }} ₽</span>
+                </div>
+                {% for s in selected_services %}
+                <div class="flex justify-between items-center py-1">
+                    <span class="font-medium text-zinc-600">{{ s.service_name }}</span>
+                    <span class="font-bold text-on-surface">{{ s.price }} ₽</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="flex justify-between items-center pt-4 mt-2 border-t border-surface-variant">
+                <span class="font-black text-on-surface text-sm uppercase tracking-wide">Итого</span>
+                <span class="text-2xl font-black text-on-surface" id="checkout-total">{{ total_price }} ₽</span>
+            </div>
+        </div>
+
+        <!-- 4. ОПЛАТА -->
+        <div class="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm" id="checkout-payment">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-black flex items-center gap-2 uppercase tracking-tight text-zinc-800">
+                    <span class="material-symbols-outlined text-primary">payments</span>
+                    Оплата
+                </h2>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-8">
+                <!-- Method Selector -->
+                <div class="flex md:flex-col gap-3 w-full md:w-48">
+                    <label class="cursor-pointer flex-1">
+                        <input type="radio" name="payment_method" value="card" class="peer hidden" checked onchange="togglePaymentMethod('card')">
+                        <div class="border border-zinc-100 peer-checked:border-[#D1FF00] peer-checked:bg-[#D1FF00]/5 rounded-xl p-4 flex flex-col items-center gap-2 transition-all">
+                            <span class="material-symbols-outlined text-2xl text-zinc-400 peer-checked:text-primary">credit_card</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest">Карта</span>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer flex-1">
+                        <input type="radio" name="payment_method" value="qr" class="peer hidden" onchange="togglePaymentMethod('qr')">
+                        <div class="border border-zinc-100 peer-checked:border-[#D1FF00] peer-checked:bg-[#D1FF00]/5 rounded-xl p-4 flex flex-col items-center gap-2 transition-all">
+                            <span class="material-symbols-outlined text-2xl text-zinc-400 peer-checked:text-primary">qr_code_scanner</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest">QR-код</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Form -->
+                <form id="payment-form" method="POST" action="{% url 'checkout' trip.id %}" class="flex-grow flex flex-col gap-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="wagon" value="{{ wagon }}">
+                    <input type="hidden" name="seat" value="{{ seat }}">
+                    <input type="hidden" name="price" value="{{ total_price }}">
+                    <input type="hidden" name="extra_services" value="{{ extra_services_param }}">
+                    <input type="hidden" name="from_station" value="{{ from_station_id }}">
+                    <input type="hidden" name="to_station" value="{{ to_station_id }}">
+                    <input type="hidden" name="auto_upgrade" value="{{ auto_upgrade_param }}">
+                    
+                    <div id="card-fields" class="flex flex-col gap-4">
+                        <input type="text" id="c-num-field" placeholder="Номер карты" maxlength="19" class="w-full bg-zinc-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm tracking-widest shadow-inner" required>
+                        <div class="flex gap-4">
+                            <input type="text" id="c-exp-field" placeholder="ММ/ГГ" maxlength="5" class="w-1/2 bg-zinc-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm tracking-widest shadow-inner text-center" required>
+                            <input type="text" id="c-cvv-field" placeholder="CVV" maxlength="3" class="w-1/2 bg-zinc-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm tracking-widest shadow-inner text-center" style="-webkit-text-security: disc;" required>
+                        </div>
+                        <input type="text" id="c-name-field" placeholder="Владелец (IVAN IVANOV)" class="w-full bg-zinc-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#D1FF00] font-mono text-sm shadow-inner uppercase" required>
+                    </div>
+
+                    <div id="qr-fields" class="hidden flex-col items-center justify-center py-4 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-100">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=%D0%92%D1%8B%20%D0%BE%D0%BF%D0%BB%D0%B0%D1%82%D0%B8%D0%BB%D0%B8" alt="QR" class="w-24 h-24 shadow-sm rounded-lg border-2 border-white mb-2">
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Отсканируйте код</span>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="w-full bg-black text-[#D1FF00] text-xs font-black uppercase tracking-widest py-4 rounded-xl hover:bg-zinc-800 transition-all shadow-lg flex justify-center items-center gap-2 active:scale-[0.98]">
+                        <span id="submit-btn-text">Оплатить {{ total_price }} ₽</span>
+                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+                    </button>
+                    
+                    <div class="flex items-center gap-3 mt-2 pt-4 border-t border-zinc-50">
+                        <div class="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400">
+                            <span class="material-symbols-outlined text-sm">alternate_email</span>
+                        </div>
+                        <div>
+                            <span class="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block">Информация о билете будет отправлена на:</span>
+                            <span class="text-xs font-bold">{{ user.email }}</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function togglePaymentMethod(method) {
+        const cardFields = document.getElementById('card-fields');
+        const qrFields = document.getElementById('qr-fields');
+        const submitBtn = document.getElementById('submit-btn');
+        const cardInputs = cardFields.querySelectorAll('input');
+        
+        if (method === 'card') {
+            cardFields.style.display = 'flex';
+            qrFields.style.display = 'none';
+            submitBtn.innerHTML = '<span id="submit-btn-text">Оплатить {{ total_price }} ₽</span> <span class="material-symbols-outlined text-sm">chevron_right</span>';
+            cardInputs.forEach(input => input.setAttribute('required', 'required'));
+        } else {
+            cardFields.style.display = 'none';
+            qrFields.style.display = 'flex';
+            submitBtn.innerHTML = '<span id="submit-btn-text">Проверить оплату</span> <span class="material-symbols-outlined text-sm">qr_code_scanner</span>';
+            cardInputs.forEach(input => input.removeAttribute('required'));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardNumber = document.getElementById('c-num-field');
+        const cardDate = document.getElementById('c-exp-field');
+        const cardCvv = document.getElementById('c-cvv-field');
+        const cardName = document.getElementById('c-name-field');
+
+        if(cardNumber) cardNumber.addEventListener('input', function(e) {
+            this.setCustomValidity('');
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) formattedValue += ' ';
+                formattedValue += value[i];
+            }
+            e.target.value = formattedValue;
+        });
+
+        if(cardDate) cardDate.addEventListener('input', function(e) {
+            this.setCustomValidity('');
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                let month = parseInt(value.substring(0, 2));
+                if (month > 12) value = '12' + value.substring(2);
+                if (month === 0) value = '01' + value.substring(2);
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+        
+        if(cardCvv) cardCvv.addEventListener('input', function(e) {
+            this.setCustomValidity('');
+            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 3);
+        });
+
+        if(cardName) cardName.addEventListener('input', function(e) {
+            this.setCustomValidity('');
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z\s]/g, '');
+        });
+
+        const paymentForm = document.getElementById('payment-form');
+        if (paymentForm) {
+            paymentForm.addEventListener('submit', function(e) {
+                const isCard = document.querySelector('input[name="payment_method"]:checked').value === 'card';
+                if (isCard) {
+                    const cNum = document.getElementById('c-num-field');
+                    const cExp = document.getElementById('c-exp-field');
+                    const cCvv = document.getElementById('c-cvv-field');
+                    
+                    if (cNum.value.length !== 19) {
+                        e.preventDefault();
+                        cNum.setCustomValidity('Пожалуйста, введите корректный номер карты (16 цифр).');
+                        cNum.reportValidity();
+                        return;
+                    }
+                    if (cExp.value.length !== 5) {
+                        e.preventDefault();
+                        cExp.setCustomValidity('Пожалуйста, полностью введите срок действия карты (ММ/ГГ).');
+                        cExp.reportValidity();
+                        return;
+                    }
+                    if (cCvv.value.length !== 3) {
+                        e.preventDefault();
+                        cCvv.setCustomValidity('Пожалуйста, введите 3 цифры CVV-кода.');
+                        cCvv.reportValidity();
+                        return;
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

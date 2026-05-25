@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    /* Прячем инпуты для переключения вкладок */
+    #tab-login:checked~#content-login {
+        display: block;
+    }
+
+    #tab-login:checked~#content-reg {
+        display: none;
+    }
+
+    #tab-reg:checked~#content-login {
+        display: none;
+    }
+
+    #tab-reg:checked~#content-reg {
+        display: block;
+    }
+
+    /* Стилизуем активные вкладки */
+    #tab-login:checked~.tabs-header label[for="tab-login"] {
+        border-bottom-color: #D1FF00;
+        color: #191c1e;
+        font-weight: 700;
+    }
+
+    #tab-reg:checked~.tabs-header label[for="tab-reg"] {
+        border-bottom-color: #D1FF00;
+        color: #191c1e;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="flex-grow flex flex-col items-center justify-center w-full px-4 py-12 bg-background">
+
+    <div
+        class="bg-surface-container-lowest w-full max-w-lg rounded-2xl border border-surface-variant shadow-[0px_8px_30px_rgba(0,0,0,0.08)] p-8 relative overflow-hidden">
+
+        {% if error %}
+        <div class="bg-error-container text-on-error-container p-4 rounded-lg mb-6 text-sm font-semibold">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Радиокнопки для вкладок (невидимые) -->
+        <input type="radio" name="auth-tabs" id="tab-login" class="hidden" {% if active_tab != 'reg' %}checked{% endif %}>
+        <input type="radio" name="auth-tabs" id="tab-reg" class="hidden" {% if active_tab == 'reg' %}checked{% endif %}>
+
+        <div class="tabs-header flex gap-6 border-b border-surface-variant mb-8">
+            <label for="tab-login"
+                class="pb-3 text-[14px] text-on-surface-variant cursor-pointer border-b-2 border-transparent transition-colors hover:text-on-surface uppercase tracking-wide font-semibold">Вход</label>
+            <label for="tab-reg"
+                class="pb-3 text-[14px] text-on-surface-variant cursor-pointer border-b-2 border-transparent transition-colors hover:text-on-surface uppercase tracking-wide font-semibold">Регистрация</label>
+        </div>
+
+        <!-- Контент Входа -->
+        <div id="content-login">
+            <h2 class="text-2xl font-bold text-on-surface mb-6">Вход в аккаунт</h2>
+            <form method="post" action="/login/" class="flex flex-col gap-5">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Логин</label>
+                    <input type="text" name="username"
+                        class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[16px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                        placeholder="Введите логин" required>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Пароль</label>
+                    <input type="password" name="password"
+                        class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[16px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                        placeholder="Введите пароль" required>
+                </div>
+                <button type="submit"
+                    class="mt-2 bg-[#D1FF00] text-on-primary-fixed w-full py-3.5 rounded-xl font-bold uppercase tracking-wide hover:bg-[#bce600] transition-colors shadow-sm text-[14px]">
+                    Войти
+                </button>
+            </form>
+        </div>
+
+        <!-- Контент Регистрации -->
+        <div id="content-reg" class="hidden">
+            <h2 class="text-2xl font-bold text-on-surface mb-6">Создать аккаунт</h2>
+            <form method="post" action="/register/" class="flex flex-col gap-5">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Фамилия
+                            <span class="text-error">*</span></label>
+                        <input type="text" name="last_name" value="{{ reg_data.last_name|default:'' }}"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="Иванов" required>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Имя <span
+                                class="text-error">*</span></label>
+                        <input type="text" name="first_name" value="{{ reg_data.first_name|default:'' }}"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="Иван" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Отчество
+                            (при наличии)</label>
+                        <input type="text" name="middle_name" value="{{ reg_data.middle_name|default:'' }}"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="Иванович">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Пол <span
+                                class="text-error">*</span></label>
+                        <select name="gender"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            required>
+                            <option value="" disabled {% if not reg_data.gender %}selected{% endif %}>Выберите пол
+                            </option>
+                            <option value="Мужской" {% if reg_data.gender == 'Мужской' %}selected{% endif %}>Мужской
+                            </option>
+                            <option value="Женский" {% if reg_data.gender == 'Женский' %}selected{% endif %}>Женский
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Дата
+                            рождения <span class="text-error">*</span></label>
+                        <input type="text" name="birth_date" id="reg-date" value="{{ reg_data.birth_date|default:'' }}"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow cursor-pointer"
+                            placeholder="Выберите дату" required>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Логин
+                            <span class="text-error">*</span></label>
+                        <input type="text" name="username" value="{{ reg_data.username|default:'' }}"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="ivanov_i" autocomplete="off" pattern="[a-zA-Z0-9_]+"
+                            title="Логин должен состоять только из латинских букв, цифр и знака подчеркивания" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Email
+                            <span class="text-error">*</span></label>
+                        <input type="email" name="email" value="{{ reg_data.email|default:'' }}"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="ivan@example.com" required>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Телефон
+                            <span class="text-error">*</span></label>
+                        <input type="tel" name="phone" id="reg-phone" value="{{ reg_data.phone|default:'' }}"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="+7 (000) 000-00-00" pattern="^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$"
+                            title="Введите номер телефона полностью" minlength="18" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Пароль
+                            <span class="text-error">*</span></label>
+                        <input type="password" name="password" id="reg-password"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="••••••••" autocomplete="new-password" required>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Повторите
+                            пароль <span class="text-error">*</span></label>
+                        <input type="password" name="password_confirm" id="reg-password-confirm"
+                            class="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:border-[#D1FF00] focus:ring-1 focus:ring-[#D1FF00] transition-shadow"
+                            placeholder="••••••••" autocomplete="new-password" required>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 mt-2">
+                    <input type="checkbox" id="agreement"
+                        class="mt-1 w-4 h-4 text-primary bg-surface border-surface-variant rounded focus:ring-primary focus:ring-2 cursor-pointer"
+                        required>
+                    <label for="agreement" class="text-[12px] text-on-surface-variant cursor-pointer">
+                        Даю свое согласие на обработку представленных мной персональных данных.
+                    </label>
+                </div>
+
+                <button type="submit"
+                    class="mt-4 bg-[#D1FF00] text-on-primary-fixed w-full py-3.5 rounded-xl font-bold uppercase tracking-wide hover:bg-[#bce600] transition-colors shadow-sm text-[14px]">
+                    Зарегистрироваться
+                </button>
+            </form>
+        </div>
+
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+<script src="https://unpkg.com/imask"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        flatpickr("#reg-date", {
+            locale: "ru",
+            dateFormat: "d.m.Y",
+            maxDate: "today"
+        });
+
+        const phoneInput = document.getElementById('reg-phone');
+        if (phoneInput) {
+            IMask(phoneInput, {
+                mask: '+{7} (000) 000-00-00'
+            });
+        }
+
+        const pass = document.getElementById('reg-password');
+        const conf = document.getElementById('reg-password-confirm');
+        if (pass && conf) {
+            const validatePass = () => {
+                if (pass.value !== conf.value) {
+                    conf.setCustomValidity('Пароли не совпадают');
+                } else {
+                    conf.setCustomValidity('');
+                }
+            };
+            pass.addEventListener('input', validatePass);
+            conf.addEventListener('input', validatePass);
+        }
+    });
+</script>
+{% endblock %}

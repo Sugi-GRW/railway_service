@@ -1,0 +1,284 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+<style>
+    .calendarbox,
+    .clockbox {
+        display: none;
+        position: absolute;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post" id="trips_form" novalidate>
+        {% csrf_token %}
+        <div>
+            <fieldset class="module aligned">
+
+                <div class="form-row field-train_num">
+                    <div>
+                        <div class="flex-container">
+                            <label class="required" for="id_train_num">Номер поезда:</label>
+                            <input type="text" name="train_num" class="vTextField" maxlength="20" required
+                                id="id_train_num">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row field-route_id">
+                    <div>
+                        <div class="flex-container">
+                            <label class="required" for="id_route_id">Номер маршрута (Route ID):</label>
+                            <input type="number" name="route_id" class="vIntegerField" required id="id_route_id">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row field-departure_time">
+                    <fieldset>
+                        <legend>Время отправления:</legend>
+                        <div>
+                            <div class="flex-container">
+                                <p class="datetime">
+                                    <label for="id_dep_date">Дата:</label>
+                                    <input type="text" name="dep_date" class="vDateField" size="10" required
+                                        id="id_dep_date">
+                                    <span class="datetimeshortcuts">
+                                        &nbsp;<a href="#" role="button"
+                                            onclick="setToday('id_dep_date'); return false;">Сегодня</a>&nbsp;|&nbsp;
+                                        <a href="#" id="calendarlink0"
+                                            onclick="toggleCalendar('id_dep_date', 'calendarbox0', this); return false;"><span
+                                                class="date-icon" title="Выберите дату"></span></a>
+                                    </span>
+                                    <br>
+                                    <label for="id_dep_time">Время:</label>
+                                    <input type="text" name="dep_time" class="vTimeField" size="8" required
+                                        id="id_dep_time">
+                                    <span class="datetimeshortcuts">
+                                        &nbsp;<a href="#" role="button"
+                                            onclick="setNow('id_dep_time'); return false;">Сейчас</a>&nbsp;|&nbsp;
+                                        <a href="#" id="clocklink0"
+                                            onclick="toggleClock('id_dep_time', 'clockbox0', this); return false;"><span
+                                                class="clock-icon" title="Выберите время"></span></a>
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="form-row field-wagons">
+                    <div>
+                        <div class="flex-container">
+                            <label class="required" for="id_wagons">Состав вагонов:</label>
+                            <input type="text" name="wagons" class="vTextField" required id="id_wagons">
+                        </div>
+                        <div class="help">Каждая цифра — вагон с классом: 1-Сидячий, 2-Плацкарт, 3-Купе, 4-СВ, 5-Первый
+                            класс.</div>
+                    </div>
+                </div>
+
+            </fieldset>
+
+            <div class="submit-row">
+                <input type="submit" value="Сгенерировать рейс" class="default" name="_save">
+            </div>
+        </div>
+    </form>
+</div>
+
+{# ===== Попап календаря ===== #}
+<div class="calendarbox module" id="calendarbox0"></div>
+
+{# ===== Попап часов ===== #}
+<div class="clockbox module" id="clockbox0">
+    <h2>Выберите время</h2>
+    <ul class="timelist">
+        <li><a role="button" href="#"
+                onclick="pickTime('id_dep_time', 'now'); closeBox('clockbox0'); return false;">Сейчас</a></li>
+        <li><a role="button" href="#"
+                onclick="pickTime('id_dep_time', '00:00:00'); closeBox('clockbox0'); return false;">Полночь</a></li>
+        <li><a role="button" href="#"
+                onclick="pickTime('id_dep_time', '06:00:00'); closeBox('clockbox0'); return false;">6 утра</a></li>
+        <li><a role="button" href="#"
+                onclick="pickTime('id_dep_time', '12:00:00'); closeBox('clockbox0'); return false;">Полдень</a></li>
+        <li><a role="button" href="#"
+                onclick="pickTime('id_dep_time', '18:00:00'); closeBox('clockbox0'); return false;">6 вечера</a></li>
+    </ul>
+    <p class="calendar-cancel"><a role="button" href="#" onclick="closeBox('clockbox0'); return false;">Отмена</a></p>
+</div>
+
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static "admin/js/calendar.js" %}"></script>
+<script>
+    // ─── Утилиты ─────────────────────────────────────────────────────────────────
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function formatDate(d) {
+        return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
+    }
+
+    function formatTime(d) {
+        return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function closeBox(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function positionBox(boxEl, anchorEl) {
+        var rect = anchorEl.getBoundingClientRect();
+        boxEl.style.position = 'absolute';
+        boxEl.style.left = (window.scrollX + rect.left) + 'px';
+        boxEl.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+    }
+
+    // Закрыть при клике снаружи
+    document.addEventListener('click', function (e) {
+        ['calendarbox0', 'clockbox0'].forEach(function (id) {
+            var box = document.getElementById(id);
+            if (box && box.style.display === 'block' && !box.contains(e.target)) {
+                // Не закрываем, если кликнули по ссылке-триггеру
+                if (!e.target.closest('#calendarlink0') && !e.target.closest('#clocklink0')) {
+                    box.style.display = 'none';
+                }
+            }
+        });
+    });
+
+    // ─── Кнопка «Сегодня» ────────────────────────────────────────────────────────
+
+    function setToday(fieldId) {
+        document.getElementById(fieldId).value = formatDate(new Date());
+    }
+
+    // ─── Кнопка «Сейчас» ─────────────────────────────────────────────────────────
+
+    function setNow(fieldId) {
+        document.getElementById(fieldId).value = formatTime(new Date());
+    }
+
+    // ─── Попап часов ─────────────────────────────────────────────────────────────
+
+    function toggleClock(fieldId, boxId, anchor) {
+        var box = document.getElementById(boxId);
+        if (box.style.display === 'block') { box.style.display = 'none'; return; }
+        positionBox(box, anchor);
+        box.style.display = 'block';
+    }
+
+    function pickTime(fieldId, value) {
+        if (value === 'now') value = formatTime(new Date());
+        document.getElementById(fieldId).value = value;
+    }
+
+    // ─── Попап календаря ─────────────────────────────────────────────────────────
+
+    var _calState = { year: null, month: null, fieldId: null, boxId: null };
+
+    function toggleCalendar(fieldId, boxId, anchor) {
+        var box = document.getElementById(boxId);
+        if (box.style.display === 'block') { box.style.display = 'none'; return; }
+
+        var now = new Date();
+        _calState.year = now.getFullYear();
+        _calState.month = now.getMonth();      // 0-based
+        _calState.fieldId = fieldId;
+        _calState.boxId = boxId;
+
+        // Попробуем распарсить уже введённую дату
+        var existing = document.getElementById(fieldId).value;
+        var m = existing.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        if (m) {
+            _calState.year = parseInt(m[3]);
+            _calState.month = parseInt(m[2]) - 1;
+        }
+
+        renderCalendar();
+        positionBox(box, anchor);
+        box.style.display = 'block';
+    }
+
+    var MONTH_NAMES_RU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+    function renderCalendar() {
+        var box = document.getElementById(_calState.boxId);
+        var year = _calState.year;
+        var month = _calState.month;
+
+        var today = new Date();
+        var firstDay = new Date(year, month, 1);
+        var daysInMonth = new Date(year, month + 1, 0).getDate();
+        // В JS: 0-Вс, 1-Пн … переводим в Пн=0
+        var startDow = (firstDay.getDay() + 6) % 7;
+
+        var html = '<div>'
+            + '<a href="#" class="calendarnav-previous" onclick="event.stopPropagation(); calNav(-1); return false;">&lt;</a>'
+            + '<a href="#" class="calendarnav-next" onclick="event.stopPropagation(); calNav(1); return false;">&gt;</a>'
+            + '</div>'
+            + '<div class="calendar"><table>'
+            + '<caption>' + MONTH_NAMES_RU[month] + ' ' + year + '</caption>'
+            + '<tbody><tr><th>П</th><th>В</th><th>С</th><th>Ч</th><th>П</th><th>С</th><th>В</th></tr>';
+
+        var dayNum = 1;
+        for (var row = 0; row < 6; row++) {
+            if (dayNum > daysInMonth) break;
+            html += '<tr>';
+            for (var col = 0; col < 7; col++) {
+                var cellIndex = row * 7 + col;
+                if (cellIndex < startDow || dayNum > daysInMonth) {
+                    html += '<td class="nonday">&nbsp;</td>';
+                } else {
+                    var isToday = (dayNum === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+                    html += '<td class="' + (isToday ? 'today selected' : '') + '">'
+                        + '<a role="button" href="#" onclick="pickDate(' + dayNum + '); return false;">' + dayNum + '</a>'
+                        + '</td>';
+                    dayNum++;
+                }
+            }
+            html += '</tr>';
+        }
+
+        html += '</tbody></table></div>'
+            + '<div class="calendar-shortcuts">'
+            + '<a role="button" href="#" onclick="pickRelDay(-1); return false;">Вчера</a>&nbsp;|&nbsp;'
+            + '<a role="button" href="#" onclick="pickRelDay(0); return false;">Сегодня</a>&nbsp;|&nbsp;'
+            + '<a role="button" href="#" onclick="pickRelDay(1); return false;">Завтра</a>'
+            + '</div>'
+            + '<p class="calendar-cancel"><a role="button" href="#" onclick="closeBox(\'' + _calState.boxId + '\'); return false;">Отмена</a></p>';
+
+        box.innerHTML = html;
+    }
+
+    function calNav(delta) {
+        _calState.month += delta;
+        if (_calState.month > 11) { _calState.month = 0; _calState.year++; }
+        if (_calState.month < 0) { _calState.month = 11; _calState.year--; }
+        renderCalendar();
+    }
+
+    function pickDate(day) {
+        var d = new Date(_calState.year, _calState.month, day);
+        document.getElementById(_calState.fieldId).value = formatDate(d);
+        closeBox(_calState.boxId);
+    }
+
+    function pickRelDay(delta) {
+        var d = new Date();
+        d.setDate(d.getDate() + delta);
+        document.getElementById(_calState.fieldId).value = formatDate(d);
+        closeBox(_calState.boxId);
+    }
+</script>
+{% endblock %}
